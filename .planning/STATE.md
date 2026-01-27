@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 Phase: 1 of 4 — Test Coverage
-Plan: 2 of 6 in current phase
+Plan: 3 of 6 in current phase
 Status: In progress
-Last activity: 2026-01-27 — Completed 01-01-PLAN.md (Foundation Layer Tests)
+Last activity: 2026-01-27 — Completed 01-03-PLAN.md (TiptapEditor Tests)
 
 ## Progress
 
 ```
-Phase 1: ███░░░░░░░ 33%   ← Current (2/6 plans)
+Phase 1: █████░░░░░ 50%   ← Current (3/6 plans)
 Phase 2: ░░░░░░░░░░ 0%
 Phase 3: ░░░░░░░░░░ 0%
 Phase 4: ░░░░░░░░░░ 0%
 
-Overall:  ██░░░░░░░░ 12% (2/17 total plans)
+Overall:  ██░░░░░░░░ 18% (3/17 total plans)
 ```
 
 ## Accumulated Context
@@ -35,6 +35,8 @@ Overall:  ██░░░░░░░░ 12% (2/17 total plans)
 | Testing first | Roadmap | Tests catch regressions from subsequent fixes |
 | Zustand state testing pattern | 01-01 | Direct setState/getState for reliable state manipulation |
 | localStorage mocking | 01-01 | Avoid persistence side effects in tests |
+| Use emptyDoc structure for Tiptap tests | 01-03 | Avoid "Invalid content" warnings from Tiptap |
+| Skip focus/click tests in jsdom | 01-03 | jsdom lacks elementFromPoint for ProseMirror |
 
 ### Pending Todos
 
@@ -46,8 +48,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-01-27 04:26:58Z
-Stopped at: Completed 01-01-PLAN.md (Foundation Layer Tests)
+Last session: 2026-01-27 04:27:52Z
+Stopped at: Completed 01-03-PLAN.md (TiptapEditor Tests)
 Resume file: None
 
 ---
