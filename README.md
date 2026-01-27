@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MindForge
+
+A personal note-taking app with rich text editing, built with Next.js and Supabase.
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Auth & Database:** Supabase (email/password + Google OAuth)
+- **State Management:** Zustand
+- **Rich Text Editor:** Tiptap
+- **Styling:** Tailwind CSS
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+git clone <repo-url>
+cd mindforge
+npm install
+cp .env.example .env.local  # Then fill in your Supabase credentials
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env.local` file from `.env.example` and fill in the values:
 
-## Learn More
+| Variable | Description | Where to get it |
+|----------|-------------|-----------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | [Supabase Dashboard](https://supabase.com/dashboard/project/_/settings/api) → Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key | [Supabase Dashboard](https://supabase.com/dashboard/project/_/settings/api) → anon public key |
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This app is designed for [Vercel](https://vercel.com):
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Connect your GitHub repository in the Vercel dashboard
+2. Add both environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) in **Settings → Environment Variables**
+3. Deploy — Vercel auto-detects Next.js and handles the build
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Production build |
+| `npm start` | Start production server |
+| `npm test` | Run tests |
+| `npm run test:coverage` | Run tests with coverage report |
+| `npm run lint` | Run ESLint |
