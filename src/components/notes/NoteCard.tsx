@@ -22,7 +22,9 @@ export function NoteCard({ note }: NoteCardProps) {
       href={`/notes/${note.id}`}
       className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg 
                  hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600
-                 bg-white dark:bg-gray-800 transition-all duration-200"
+                 bg-white dark:bg-gray-800 transition-all duration-200
+                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+                 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900"
     >
       <h3 className="font-semibold text-lg text-gray-900 dark:text-white truncate">
         {note.title}
