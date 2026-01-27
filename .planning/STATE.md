@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Notes are saved reliably and the app deploys without issues
-**Current focus:** Phase 2 complete, ready for Phase 3 — Polish
+**Current focus:** Phase 3 in progress — Polish
 
 ## Current Position
 
-Phase: 2 of 4 — Bug Fixes
-Plan: 2 of 2 in current phase (COMPLETE)
-Status: Phase complete
-Last activity: 2026-01-27 — Completed 02-02-PLAN.md
+Phase: 3 of 4 — Polish
+Plan: 2 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-27 — Completed 03-02-PLAN.md
 
 ## Progress
 
 ```
 Phase 1: ██████████ 100% ✓
 Phase 2: ██████████ 100% ✓
-Phase 3: ░░░░░░░░░░ 0%   ← Next
+Phase 3: █████████░ 90%   ← In progress
 Phase 4: ░░░░░░░░░░ 0%
 
-Overall:  █████░░░░░ 50%
+Overall:  ████████░░ 80%
 ```
 
 ## Accumulated Context
@@ -42,6 +42,8 @@ Overall:  █████░░░░░ 50%
 | Capture notes at function start for rollback | 02-02 | Ensures exact prior state is restored on error |
 | Keep console.error alongside setError | 02-02 | Debugging visibility without losing user feedback |
 | 5-second error auto-dismiss | 02-02 | Prevent stale error messages |
+| focus-visible not focus for keyboard ring | 03-02 | Avoid showing ring on mouse click |
+| ring-inset for toolbar buttons | 03-02 | Small buttons look better with inset ring |
 
 ### Pending Todos
 
@@ -49,12 +51,12 @@ None.
 
 ### Blockers / Concerns
 
-None currently.
+- Build prerender fails on /signup without Supabase env vars (pre-existing, needs fix in Phase 4)
 
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 02-02-PLAN.md — Phase 2 complete
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
 
 ---
