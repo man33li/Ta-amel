@@ -31,10 +31,10 @@ Requirements for production-ready release. Focus on quality, stability, and depl
 
 ### Deployment
 
-- [ ] **DEP-01**: Clean production build with no errors
-- [ ] **DEP-02**: Environment variables documented
-- [ ] **DEP-03**: Vercel deployment successful
-- [ ] **DEP-04**: Production smoke test passes
+- [x] **DEP-01**: Clean production build with no errors
+- [x] **DEP-02**: Environment variables documented
+- [x] **DEP-03**: Vercel deployment successful
+- [x] **DEP-04**: Production smoke test passes
 
 ## v2 Requirements
 
@@ -78,10 +78,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | POL-02 | Phase 3 | Complete |
 | POL-03 | Phase 3 | Complete |
 | POL-04 | Phase 3 | Complete |
-| DEP-01 | Phase 4 | Pending |
-| DEP-02 | Phase 4 | Pending |
-| DEP-03 | Phase 4 | Pending |
-| DEP-04 | Phase 4 | Pending |
+| DEP-01 | Phase 4 | Complete |
+| DEP-02 | Phase 4 | Complete |
+| DEP-03 | Phase 4 | Complete |
+| DEP-04 | Phase 4 | Complete |
 
 **Coverage:**
 - v1.0 requirements: 17 total
@@ -90,4 +90,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 after milestone v1.0 started*
+*Last updated: 2026-01-27 — All v1.0 requirements complete*
