@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Notes are saved reliably and the app deploys without issues
-**Current focus:** Phase 3 complete, ready for Phase 4 — Deployment
+**Current focus:** Phase 4 — Deployment (in progress)
 
 ## Current Position
 
-Phase: 3 of 4 — Polish (COMPLETE)
-Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-01-27 — Completed 03-01-PLAN.md
+Phase: 4 of 4 — Deployment
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-27 — Completed 04-01-PLAN.md
 
 ## Progress
 
@@ -20,9 +20,9 @@ Last activity: 2026-01-27 — Completed 03-01-PLAN.md
 Phase 1: ██████████ 100% ✓
 Phase 2: ██████████ 100% ✓
 Phase 3: ██████████ 100% ✓
-Phase 4: ░░░░░░░░░░ 0%   ← Next
+Phase 4: █████░░░░░ 50%   ← Current
 
-Overall:  ████████░░ 80%
+Overall:  █████████░ 90%
 ```
 
 ## Accumulated Context
@@ -46,6 +46,7 @@ Overall:  ████████░░ 80%
 | ring-inset for toolbar buttons | 03-02 | Small buttons look better with inset ring |
 | SVG spinner with currentColor | 03-01 | Theme-compatible, no external dependency |
 | Extract fetchNote as useCallback for retry | 03-01 | Reuse fetch logic without duplication |
+| Root layout force-dynamic for Supabase | 04-01 | Client components ignore page-level dynamic exports |
 
 ### Pending Todos
 
@@ -53,12 +54,12 @@ None.
 
 ### Blockers / Concerns
 
-- Build prerender fails on /signup without Supabase env vars (pre-existing, needs fix in Phase 4)
+None.
 
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 03-01-PLAN.md — Phase 3 complete
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
 
 ---

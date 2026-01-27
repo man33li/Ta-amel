@@ -107,7 +107,7 @@ Plans:
 **Plans:** 2 plans in 2 waves
 
 Plans:
-- [ ] 04-01-PLAN.md — Fix build errors + document environment variables
+- [x] 04-01-PLAN.md — Fix build errors + document environment variables
 - [ ] 04-02-PLAN.md — Vercel deployment + production smoke test
 
 **Requirements:**
@@ -132,11 +132,11 @@ Plans:
 Phase 1: ██████████ 100% ✓
 Phase 2: ██████████ 100% ✓
 Phase 3: ██████████ 100% ✓
-Phase 4: ░░░░░░░░░░ 0%   ← Next
+Phase 4: █████░░░░░ 50%  ← Current
 
-Overall:  ████████░░ 80%
+Overall:  █████████░ 90%
 ```
 
 ---
 *Roadmap created: 2026-01-27*
-*Last updated: 2026-01-27 — Phase 3 complete*
+*Last updated: 2026-01-27 — Phase 4 plan 1 complete*
