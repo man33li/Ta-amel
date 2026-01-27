@@ -153,4 +153,27 @@ DECISION: Create 3 tracking files:
 
 ---
 
+## Entry 005: Git Commit Operation
+
+### Thinking Process
+```
+TASK: Commit tracking infrastructure
+RATIONALE: Persist work for future sessions
+DECISION: Single atomic commit with descriptive message
+```
+
+### Git Operation
+```bash
+git add .planning/CHANGELOG.md .planning/DATASET.md .planning/CODEBASE_REVIEW.md
+git commit -m "docs: add AI tracking infrastructure and codebase review..."
+```
+
+### Commit Details
+- **Hash**: 68dbd5f
+- **Files**: 3
+- **Insertions**: 521 lines
+- **Message**: Conventional commit format with skill application notes
+
+---
+
 *Dataset entry: 2026-01-27*
