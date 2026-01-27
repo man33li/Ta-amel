@@ -76,6 +76,17 @@ Notes are saved reliably and the app deploys without issues. If nothing else wor
 - **Timeline**: Quality focus — thorough over fast
 - **Stack**: No major refactors — polish existing code, don't rewrite
 
+## Current Milestone: v1.0 Production Ready
+
+**Goal:** Harden the application for production deployment with comprehensive testing, bug fixes, and polish.
+
+**Target deliverables:**
+- All identified bugs fixed
+- Error boundaries and loading states implemented
+- Test coverage established
+- Clean Vercel deployment
+- No console errors/warnings in production build
+
 ## Key Decisions
 
 <!-- Decisions that constrain future work. Add throughout project lifecycle. -->
@@ -87,4 +98,4 @@ Notes are saved reliably and the app deploys without issues. If nothing else wor
 | Keep existing architecture | 4-layer structure is sound per review | — Pending |
 
 ---
-*Last updated: 2026-01-27 after initialization*
+*Last updated: 2026-01-27 after milestone v1.0 started*
