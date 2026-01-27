@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Notes are saved reliably and the app deploys without issues
-**Current focus:** Phase 4 — Deployment (in progress)
+**Current focus:** Milestone v1.0 complete!
 
 ## Current Position
 
 Phase: 4 of 4 — Deployment
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-01-27 — Completed 04-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: ✓ Milestone complete
+Last activity: 2026-01-27 — Completed 04-02-PLAN.md
 
 ## Progress
 
@@ -20,9 +20,9 @@ Last activity: 2026-01-27 — Completed 04-01-PLAN.md
 Phase 1: ██████████ 100% ✓
 Phase 2: ██████████ 100% ✓
 Phase 3: ██████████ 100% ✓
-Phase 4: █████░░░░░ 50%   ← Current
+Phase 4: ██████████ 100% ✓
 
-Overall:  █████████░ 90%
+Overall:  ██████████ 100% 🎉
 ```
 
 ## Accumulated Context
@@ -47,6 +47,7 @@ Overall:  █████████░ 90%
 | SVG spinner with currentColor | 03-01 | Theme-compatible, no external dependency |
 | Extract fetchNote as useCallback for retry | 03-01 | Reuse fetch logic without duplication |
 | Root layout force-dynamic for Supabase | 04-01 | Client components ignore page-level dynamic exports |
+| Fixed middleware for Vercel production | 04-02 | Required for correct routing in production |
 
 ### Pending Todos
 
@@ -54,12 +55,12 @@ None.
 
 ### Blockers / Concerns
 
-None.
+None — milestone complete.
 
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 04-01-PLAN.md
+Stopped at: Milestone v1.0 complete — all phases done
 Resume file: None
 
 ---
