@@ -29,30 +29,30 @@ export default function NotePage() {
   
   const supabase = useMemo(() => createClient(), [])
 
-  // Fetch note on mount
-  useEffect(() => {
-    async function fetchNote() {
-      setLoading(true)
-      setError(null)
-      
-      const { data, error: fetchError } = await supabase
-        .from('cards')
-        .select('*')
-        .eq('id', noteId)
-        .single()
+  // Fetch note - extracted for retry capability
+  const fetchNoteRef = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    
+    const { data, error: fetchError } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', noteId)
+      .single()
 
-      if (fetchError || !data) {
-        setError('Note not found')
-        setLoading(false)
-        return
-      }
-      
-      setNote(data)
+    if (fetchError || !data) {
+      setError('Note not found')
       setLoading(false)
+      return
     }
     
-    fetchNote()
+    setNote(data)
+    setLoading(false)
   }, [noteId, supabase])
+
+  // Fetch note on mount
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchNoteRef() }, [fetchNoteRef])
 
   // Debounced save function (1 second delay)
   const saveNote = useDebouncedCallback(
@@ -127,13 +127,40 @@ export default function NotePage() {
     )
   }
 
-  // Error state
-  if (error || !note) {
+  // Error state (fetch error - note not loaded)
+  if (error && !note) {
     return (
       <div className="container mx-auto p-4 max-w-3xl">
         <div className="text-center py-16">
           <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            {error || 'Note not found'}
+            {error}
+          </h2>
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <button
+              onClick={fetchNoteRef}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
+            >
+              Back to Notes
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // No note loaded (shouldn't happen after loading completes without error)
+  if (!note) {
+    return (
+      <div className="container mx-auto p-4 max-w-3xl">
+        <div className="text-center py-16">
+          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Note not found
           </h2>
           <button
             onClick={() => router.push('/')}
