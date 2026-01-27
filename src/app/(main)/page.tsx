@@ -15,7 +15,7 @@ import { NoteCard } from '@/components/notes/NoteCard'
  */
 export default function HomePage() {
   const router = useRouter()
-  const { notes, loading, error, createNote } = useNotes()
+  const { notes, loading, error, createNote, refetch } = useNotes()
 
   const handleCreateNote = async () => {
     try {
@@ -50,6 +50,12 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">My Notes</h1>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
           Error loading notes: {error}
+          <button
+            onClick={refetch}
+            className="mt-4 block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     )
