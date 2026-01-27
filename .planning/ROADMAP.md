@@ -52,6 +52,12 @@ Plans:
 
 **Goal:** Fix all known bugs identified in codebase review.
 
+**Plans:** 2 plans in 1 wave
+
+Plans:
+- [ ] 02-01-PLAN.md — Error boundary verification + middleware auth redirects
+- [ ] 02-02-PLAN.md — Optimistic update rollback + console error cleanup
+
 **Requirements:**
 - BUG-01: error.tsx boundary properly catches and displays errors
 - BUG-02: Middleware redirects unauthenticated users to /login
