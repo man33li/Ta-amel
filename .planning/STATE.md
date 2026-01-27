@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Notes are saved reliably and the app deploys without issues
-**Current focus:** Phase 3 in progress — Polish
+**Current focus:** Phase 3 complete, ready for Phase 4 — Deployment
 
 ## Current Position
 
-Phase: 3 of 4 — Polish
+Phase: 3 of 4 — Polish (COMPLETE)
 Plan: 2 of 2 in current phase
-Status: In progress
-Last activity: 2026-01-27 — Completed 03-02-PLAN.md
+Status: Phase complete
+Last activity: 2026-01-27 — Completed 03-01-PLAN.md
 
 ## Progress
 
 ```
 Phase 1: ██████████ 100% ✓
 Phase 2: ██████████ 100% ✓
-Phase 3: █████████░ 90%   ← In progress
-Phase 4: ░░░░░░░░░░ 0%
+Phase 3: ██████████ 100% ✓
+Phase 4: ░░░░░░░░░░ 0%   ← Next
 
 Overall:  ████████░░ 80%
 ```
@@ -44,6 +44,8 @@ Overall:  ████████░░ 80%
 | 5-second error auto-dismiss | 02-02 | Prevent stale error messages |
 | focus-visible not focus for keyboard ring | 03-02 | Avoid showing ring on mouse click |
 | ring-inset for toolbar buttons | 03-02 | Small buttons look better with inset ring |
+| SVG spinner with currentColor | 03-01 | Theme-compatible, no external dependency |
+| Extract fetchNote as useCallback for retry | 03-01 | Reuse fetch logic without duplication |
 
 ### Pending Todos
 
@@ -56,7 +58,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 03-02-PLAN.md
+Stopped at: Completed 03-01-PLAN.md — Phase 3 complete
 Resume file: None
 
 ---
