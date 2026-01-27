@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 Phase: 2 of 4 — Bug Fixes
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-01-27 — Phase 1 (Test Coverage) complete
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-01-27 — Completed 02-01-PLAN.md
 
 ## Progress
 
 ```
 Phase 1: ██████████ 100% ✓
-Phase 2: ░░░░░░░░░░ 0%   ← Current
+Phase 2: █████░░░░░ 50%  ← Current
 Phase 3: ░░░░░░░░░░ 0%
 Phase 4: ░░░░░░░░░░ 0%
 
-Overall:  ██░░░░░░░░ 25%
+Overall:  ███░░░░░░░ 30%
 ```
 
 ## Accumulated Context
@@ -38,6 +38,7 @@ Overall:  ██░░░░░░░░ 25%
 | Use emptyDoc structure for Tiptap tests | 01-03 | Avoid "Invalid content" warnings from Tiptap |
 | Skip focus/click tests in jsdom | 01-03 | jsdom lacks elementFromPoint for ProseMirror |
 | Mock NoteCard for Dashboard isolation | 01-05 | Isolates tests from child component internals |
+| startsWith for public path matching | 02-01 | Handles nested auth routes cleanly |
 
 ### Pending Todos
 
@@ -50,7 +51,7 @@ None currently.
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Phase 1 complete, ready to plan Phase 2
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None
 
 ---
