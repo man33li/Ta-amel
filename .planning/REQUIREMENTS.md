@@ -17,17 +17,17 @@ Requirements for production-ready release. Focus on quality, stability, and depl
 
 ### Bug Fixes
 
-- [ ] **BUG-01**: error.tsx boundary properly catches and displays errors
-- [ ] **BUG-02**: Middleware redirects unauthenticated users to /login
-- [ ] **BUG-03**: Optimistic updates rollback on server error
-- [ ] **BUG-04**: All console errors/warnings resolved
+- [x] **BUG-01**: error.tsx boundary properly catches and displays errors
+- [x] **BUG-02**: Middleware redirects unauthenticated users to /login
+- [x] **BUG-03**: Optimistic updates rollback on server error
+- [x] **BUG-04**: All console errors/warnings resolved
 
 ### Polish
 
-- [ ] **POL-01**: Loading states for all async operations (notes, auth)
-- [ ] **POL-02**: Error states for failed operations with retry options
-- [ ] **POL-03**: Edge cases handled gracefully (empty states, long content)
-- [ ] **POL-04**: Accessible keyboard navigation
+- [x] **POL-01**: Loading states for all async operations (notes, auth)
+- [x] **POL-02**: Error states for failed operations with retry options
+- [x] **POL-03**: Edge cases handled gracefully (empty states, long content)
+- [x] **POL-04**: Accessible keyboard navigation
 
 ### Deployment
 
@@ -70,14 +70,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-03 | Phase 1 | Complete |
 | TEST-04 | Phase 1 | Complete |
 | TEST-05 | Phase 1 | Complete |
-| BUG-01 | Phase 2 | Pending |
-| BUG-02 | Phase 2 | Pending |
-| BUG-03 | Phase 2 | Pending |
-| BUG-04 | Phase 2 | Pending |
-| POL-01 | Phase 3 | Pending |
-| POL-02 | Phase 3 | Pending |
-| POL-03 | Phase 3 | Pending |
-| POL-04 | Phase 3 | Pending |
+| BUG-01 | Phase 2 | Complete |
+| BUG-02 | Phase 2 | Complete |
+| BUG-03 | Phase 2 | Complete |
+| BUG-04 | Phase 2 | Complete |
+| POL-01 | Phase 3 | Complete |
+| POL-02 | Phase 3 | Complete |
+| POL-03 | Phase 3 | Complete |
+| POL-04 | Phase 3 | Complete |
 | DEP-01 | Phase 4 | Pending |
 | DEP-02 | Phase 4 | Pending |
 | DEP-03 | Phase 4 | Pending |
