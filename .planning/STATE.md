@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 Phase: 1 of 4 — Test Coverage
-Plan: 4 of 6 in current phase
+Plan: 5 of 6 in current phase
 Status: In progress
-Last activity: 2026-01-27 — Completed 01-04-PLAN.md (Signup Tests)
+Last activity: 2026-01-27 — Completed 01-05-PLAN.md (Dashboard Tests)
 
 ## Progress
 
 ```
-Phase 1: ██████░░░░ 67%   ← Current (4/6 plans)
+Phase 1: ████████░░ 83%   ← Current (5/6 plans)
 Phase 2: ░░░░░░░░░░ 0%
 Phase 3: ░░░░░░░░░░ 0%
 Phase 4: ░░░░░░░░░░ 0%
 
-Overall:  ██░░░░░░░░ 24% (4/17 total plans)
+Overall:  ██░░░░░░░░ 29% (5/17 total plans)
 ```
 
 ## Accumulated Context
@@ -37,6 +37,7 @@ Overall:  ██░░░░░░░░ 24% (4/17 total plans)
 | localStorage mocking | 01-01 | Avoid persistence side effects in tests |
 | Use emptyDoc structure for Tiptap tests | 01-03 | Avoid "Invalid content" warnings from Tiptap |
 | Skip focus/click tests in jsdom | 01-03 | jsdom lacks elementFromPoint for ProseMirror |
+| Mock NoteCard for Dashboard isolation | 01-05 | Isolates tests from child component internals |
 
 ### Pending Todos
 
@@ -48,8 +49,8 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-01-27 04:31:47Z
-Stopped at: Completed 01-04-PLAN.md (Signup Tests)
+Last session: 2026-01-27 04:33:14Z
+Stopped at: Completed 01-05-PLAN.md (Dashboard Tests)
 Resume file: None
 
 ---
