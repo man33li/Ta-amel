@@ -78,6 +78,12 @@ Plans:
 
 **Goal:** Add loading states, error handling, and handle edge cases gracefully.
 
+**Plans:** 2 plans in 1 wave
+
+Plans:
+- [ ] 03-01-PLAN.md — Loading spinners and error retry functionality
+- [ ] 03-02-PLAN.md — Keyboard accessibility with focus-visible styles
+
 **Requirements:**
 - POL-01: Loading states for all async operations (notes, auth)
 - POL-02: Error states for failed operations with retry options
