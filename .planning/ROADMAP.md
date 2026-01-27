@@ -104,6 +104,12 @@ Plans:
 
 **Goal:** Clean production build and successful Vercel deployment.
 
+**Plans:** 2 plans in 2 waves
+
+Plans:
+- [ ] 04-01-PLAN.md — Fix build errors + document environment variables
+- [ ] 04-02-PLAN.md — Vercel deployment + production smoke test
+
 **Requirements:**
 - DEP-01: Clean production build with no errors
 - DEP-02: Environment variables documented
