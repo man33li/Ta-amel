@@ -16,16 +16,20 @@ interface AppState {
   // Theme (persisted)
   theme: 'light' | 'dark'
   accentColor: string
-  
+
   // UI State (ephemeral)
   activeNoteId: string | null
+  activeWingId: string | null
+  activeRoomId: string | null
   sidebarOpen: boolean
-  
+
   // Actions
   setTheme: (theme: 'light' | 'dark') => void
   toggleTheme: () => void
   setAccentColor: (color: string) => void
   setActiveNoteId: (id: string | null) => void
+  setActiveWingId: (id: string | null) => void
+  setActiveRoomId: (id: string | null) => void
   setSidebarOpen: (open: boolean) => void
   toggleSidebar: () => void
 }
@@ -39,17 +43,21 @@ export const useAppStore = create<AppState>()(
       
       // UI State defaults
       activeNoteId: null,
+      activeWingId: null,
+      activeRoomId: null,
       sidebarOpen: true,
-      
+
       // Theme actions
       setTheme: (theme) => set({ theme }),
-      toggleTheme: () => set((state) => ({ 
-        theme: state.theme === 'light' ? 'dark' : 'light' 
+      toggleTheme: () => set((state) => ({
+        theme: state.theme === 'light' ? 'dark' : 'light'
       })),
       setAccentColor: (accentColor) => set({ accentColor }),
-      
+
       // UI actions
       setActiveNoteId: (activeNoteId) => set({ activeNoteId }),
+      setActiveWingId: (activeWingId) => set({ activeWingId }),
+      setActiveRoomId: (activeRoomId) => set({ activeRoomId }),
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
       toggleSidebar: () => set((state) => ({ 
         sidebarOpen: !state.sidebarOpen 

@@ -2,22 +2,23 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-27)
+See: .planning/PROJECT.md (updated 2026-04-27)
 
-**Core value:** Notes are saved reliably and the app deploys without issues
-**Current focus:** Planning next milestone
+**Core value:** Notes are saved reliably, recoverable by recall, and grouped where the user remembers them
+**Current focus:** v2.0 — AI memory + spatial UX
 
 ## Current Position
 
-Phase: — (milestone complete)
-Plan: —
-Status: Ready for next milestone
-Last activity: 2026-01-27 — v1.0 milestone archived
+Phase: 3 — planning + verification (complete)
+Plan: .planning/milestones/v2.0-ROADMAP.md
+Status: v2.0 implementation complete, awaiting deployment
+Last activity: 2026-04-27 — v2.0 implementation complete
 
 ## Progress
 
 ```
 v1.0: ██████████ 100% ✓ SHIPPED
+v2.0: ██████████ 100% ✓ IMPLEMENTED (deployment pending)
 ```
 
 ## Accumulated Context

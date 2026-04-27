@@ -48,7 +48,8 @@ export function useNotes() {
   // Create a new note
   const createNote = useCallback(async (
     title: string = 'Untitled',
-    content: Record<string, unknown> = {}
+    content: Record<string, unknown> = {},
+    roomId: string | null = null
   ): Promise<Card> => {
     // Capture previous state for rollback
     const previousNotes = [...notes]
@@ -65,6 +66,7 @@ export function useNotes() {
       user_id: userData.user.id,
       title,
       content,
+      room_id: roomId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
@@ -78,7 +80,8 @@ export function useNotes() {
         .insert({
           user_id: userData.user.id,
           title,
-          content
+          content,
+          ...(roomId ? { room_id: roomId } : {})
         })
         .select()
         .single()
@@ -105,7 +108,7 @@ export function useNotes() {
   // Update an existing note
   const updateNote = useCallback(async (
     id: string,
-    updates: { title?: string; content?: Record<string, unknown> }
+    updates: { title?: string; content?: Record<string, unknown>; room_id?: string | null }
   ): Promise<Card> => {
     // Capture previous state for rollback
     const previousNotes = [...notes]
@@ -131,9 +134,17 @@ export function useNotes() {
       }
 
       // Update local state with server data
-      setNotes(prev => prev.map(note => 
+      setNotes(prev => prev.map(note =>
         note.id === id ? data : note
       ))
+
+      // Fire-and-forget memory sync. Failure must not block the editor.
+      void fetch('/api/memory/sync', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ cardId: id }),
+      }).catch(() => {})
+
       return data
     } catch (err) {
       // Rollback on any error

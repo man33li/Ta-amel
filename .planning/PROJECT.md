@@ -52,7 +52,13 @@ Notes are saved reliably and the app deploys without issues.
 
 <!-- Current scope. Building toward these. -->
 
-(None — ready for next milestone)
+v2.0 — AI memory + spatial UX:
+- User can group notes into wings (top-level) and rooms (topics) — v2.0
+- User can browse a /palace page with three panes: wings → rooms → cards — v2.0
+- User can move a card between rooms from the card itself — v2.0
+- User can search the palace and see ranked results from semantic + keyword + recent lanes, each labeled by source — v2.0
+- Edits trigger a fire-and-forget memory sync that does not block the editor — v2.0
+- Without OPENAI_API_KEY the palace still works on keyword + recency only — v2.0
 
 ### Out of Scope
 
