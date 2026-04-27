@@ -1,15 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect, useCallback } from 'react'
 import type { Wing, Room } from '@/types'
 
 /**
- * usePalace - CRUD for wings and rooms.
+ * usePalace — fetch-based CRUD against /api/wings and /api/rooms.
  *
- * Mirrors useNotes.ts: optimistic updates, rollback on error, server is the
- * source of truth. Wings and rooms are loaded together because the palace
- * page renders them side by side.
+ * Mirrors useNotes: optimistic updates, rollback, server is source of truth.
  */
 export function usePalace() {
   const [wings, setWings] = useState<Wing[]>([])
@@ -17,29 +14,27 @@ export function usePalace() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const supabase = useMemo(() => createClient(), [])
-
   const fetchAll = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [wingsRes, roomsRes] = await Promise.all([
-        supabase.from('wings').select('*').order('created_at', { ascending: true }),
-        supabase.from('rooms').select('*').order('created_at', { ascending: true }),
+      const [wRes, rRes] = await Promise.all([
+        fetch('/api/wings', { cache: 'no-store' }),
+        fetch('/api/rooms', { cache: 'no-store' }),
       ])
-
-      if (wingsRes.error) {
-        setError(wingsRes.error.message)
+      if (!wRes.ok) {
+        setError(`Failed to load wings (${wRes.status})`)
         setWings([])
       } else {
-        setWings(wingsRes.data ?? [])
+        const data = (await wRes.json()) as { wings?: Wing[] }
+        setWings(data.wings ?? [])
       }
-
-      if (roomsRes.error) {
-        setError((prev) => prev ?? roomsRes.error!.message)
+      if (!rRes.ok) {
+        setError((prev) => prev ?? `Failed to load rooms (${rRes.status})`)
         setRooms([])
       } else {
-        setRooms(roomsRes.data ?? [])
+        const data = (await rRes.json()) as { rooms?: Room[] }
+        setRooms(data.rooms ?? [])
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load palace')
@@ -48,67 +43,69 @@ export function usePalace() {
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   const createWing = useCallback(
     async (name: string, color: string | null = null): Promise<Wing> => {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) throw new Error('Not authenticated')
-
-      const { data, error: err } = await supabase
-        .from('wings')
-        .insert({ user_id: userData.user.id, name, color })
-        .select()
-        .single()
-
-      if (err || !data) {
-        const message = err?.message ?? 'Failed to create wing'
+      const res = await fetch('/api/wings', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name, color }),
+      })
+      if (!res.ok) {
+        const message = `Failed to create wing (${res.status})`
         setError(message)
         throw new Error(message)
       }
-      setWings((prev) => [...prev, data])
-      return data
+      const data = (await res.json()) as { wing: Wing }
+      setWings((prev) => [...prev, data.wing])
+      return data.wing
     },
-    [supabase]
+    []
   )
 
   const renameWing = useCallback(
     async (id: string, name: string): Promise<Wing> => {
       const previous = wings
       setWings((prev) => prev.map((w) => (w.id === id ? { ...w, name } : w)))
-      const { data, error: err } = await supabase
-        .from('wings')
-        .update({ name })
-        .eq('id', id)
-        .select()
-        .single()
-      if (err || !data) {
+      try {
+        const res = await fetch(`/api/wings/${id}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name }),
+        })
+        if (!res.ok) throw new Error(`Failed to rename wing (${res.status})`)
+        const data = (await res.json()) as { wing: Wing }
+        setWings((prev) => prev.map((w) => (w.id === id ? data.wing : w)))
+        return data.wing
+      } catch (err) {
         setWings(previous)
-        const message = err?.message ?? 'Failed to rename wing'
+        const message = err instanceof Error ? err.message : 'Failed to rename wing'
         setError(message)
-        throw new Error(message)
+        throw err
       }
-      setWings((prev) => prev.map((w) => (w.id === id ? data : w)))
-      return data
     },
-    [supabase, wings]
+    [wings]
   )
 
   const deleteWing = useCallback(
     async (id: string): Promise<void> => {
-      const previousWings = wings
-      const previousRooms = rooms
+      const prevWings = wings
+      const prevRooms = rooms
       setWings((prev) => prev.filter((w) => w.id !== id))
       setRooms((prev) => prev.filter((r) => r.wing_id !== id))
-      const result = await supabase.from('wings').delete().eq('id', id)
-      if (result.error) {
-        setWings(previousWings)
-        setRooms(previousRooms)
-        setError(result.error.message)
-        throw new Error(result.error.message)
+      try {
+        const res = await fetch(`/api/wings/${id}`, { method: 'DELETE' })
+        if (!res.ok) throw new Error(`Failed to delete wing (${res.status})`)
+      } catch (err) {
+        setWings(prevWings)
+        setRooms(prevRooms)
+        const message = err instanceof Error ? err.message : 'Failed to delete wing'
+        setError(message)
+        throw err
       }
     },
-    [supabase, wings, rooms]
+    [wings, rooms]
   )
 
   const createRoom = useCallback(
@@ -117,68 +114,66 @@ export function usePalace() {
       name: string,
       description: string | null = null
     ): Promise<Room> => {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) throw new Error('Not authenticated')
-
-      const { data, error: err } = await supabase
-        .from('rooms')
-        .insert({
-          user_id: userData.user.id,
-          wing_id: wingId,
-          name,
-          description,
-        })
-        .select()
-        .single()
-
-      if (err || !data) {
-        const message = err?.message ?? 'Failed to create room'
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ wing_id: wingId, name, description }),
+      })
+      if (!res.ok) {
+        const message = `Failed to create room (${res.status})`
         setError(message)
         throw new Error(message)
       }
-      setRooms((prev) => [...prev, data])
-      return data
+      const data = (await res.json()) as { room: Room }
+      setRooms((prev) => [...prev, data.room])
+      return data.room
     },
-    [supabase]
+    []
   )
 
   const renameRoom = useCallback(
     async (id: string, name: string): Promise<Room> => {
       const previous = rooms
       setRooms((prev) => prev.map((r) => (r.id === id ? { ...r, name } : r)))
-      const { data, error: err } = await supabase
-        .from('rooms')
-        .update({ name })
-        .eq('id', id)
-        .select()
-        .single()
-      if (err || !data) {
+      try {
+        const res = await fetch(`/api/rooms/${id}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name }),
+        })
+        if (!res.ok) throw new Error(`Failed to rename room (${res.status})`)
+        const data = (await res.json()) as { room: Room }
+        setRooms((prev) => prev.map((r) => (r.id === id ? data.room : r)))
+        return data.room
+      } catch (err) {
         setRooms(previous)
-        const message = err?.message ?? 'Failed to rename room'
+        const message = err instanceof Error ? err.message : 'Failed to rename room'
         setError(message)
-        throw new Error(message)
+        throw err
       }
-      setRooms((prev) => prev.map((r) => (r.id === id ? data : r)))
-      return data
     },
-    [supabase, rooms]
+    [rooms]
   )
 
   const deleteRoom = useCallback(
     async (id: string): Promise<void> => {
       const previous = rooms
       setRooms((prev) => prev.filter((r) => r.id !== id))
-      const result = await supabase.from('rooms').delete().eq('id', id)
-      if (result.error) {
+      try {
+        const res = await fetch(`/api/rooms/${id}`, { method: 'DELETE' })
+        if (!res.ok) throw new Error(`Failed to delete room (${res.status})`)
+      } catch (err) {
         setRooms(previous)
-        setError(result.error.message)
-        throw new Error(result.error.message)
+        const message = err instanceof Error ? err.message : 'Failed to delete room'
+        setError(message)
+        throw err
       }
     },
-    [supabase, rooms]
+    [rooms]
   )
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAll()
   }, [fetchAll])
 

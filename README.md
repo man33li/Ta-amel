@@ -1,16 +1,18 @@
 # MindForge
 
-A personal note-taking app with rich text editing, semantic recall, and a spatial memory-palace navigation, built on Next.js and Supabase.
+A local-first personal note app: rich text editing, semantic recall, and a memory-palace navigation. Runs entirely on your machine — no Supabase, no OpenAI, no Vercel, no recurring bills.
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 (App Router)
-- **Auth & Database:** Supabase (email/password + Google OAuth)
-- **State Management:** Zustand
-- **Rich Text Editor:** Tiptap
-- **Styling:** Tailwind CSS
-- **AI memory:** [mem0ai](https://github.com/mem0ai/mem0) (`mem0ai/oss`) on PGVector + Supabase history
-- **Hybrid retrieval:** semantic (mem0) + keyword (Postgres) + recency, merged via Reciprocal Rank Fusion
+- **Framework:** Next.js 16 (App Router) on React 19
+- **Database:** SQLite (`better-sqlite3`) — one file on disk
+- **Embeddings:** `@xenova/transformers` running `Xenova/all-MiniLM-L6-v2` in-process (~25MB ONNX model, downloaded once)
+- **Vector search:** in-process cosine similarity over a SQLite-backed embedding store
+- **Hybrid retrieval:** semantic + keyword + recency, merged via Reciprocal Rank Fusion
+- **Auth:** single-user passphrase (bcrypt hash) with `iron-session` cookies
+- **Editor:** Tiptap 3
+- **Styling:** Tailwind CSS 4
+- **Testing:** Vitest + React Testing Library
 
 ## Getting Started
 
@@ -18,34 +20,31 @@ A personal note-taking app with rich text editing, semantic recall, and a spatia
 git clone <repo-url>
 cd mindforge
 npm install
-cp .env.example .env.local  # Then fill in your Supabase credentials
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000). On first launch you'll be redirected to `/setup` to choose a passphrase. After that you go straight to your notes.
 
-## Environment Variables
+## Where your data lives
 
-Create a `.env.local` file from `.env.example` and fill in the values:
+By default, MindForge stores everything in `./data/mindforge.db` next to the project. Override with either env var:
 
-| Variable | Description | Where to get it |
-|----------|-------------|-----------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | [Supabase Dashboard](https://supabase.com/dashboard/project/_/settings/api) → Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key | [Supabase Dashboard](https://supabase.com/dashboard/project/_/settings/api) → anon public key |
-| `SUPABASE_DB_URL` | Postgres connection string for the memory layer (pgvector + history) | Supabase Dashboard → Database → Connection string |
-| `OPENAI_API_KEY` | Powers mem0 embeddings + fact extraction. Optional — without it, the palace falls back to keyword + recency search. | [OpenAI Platform](https://platform.openai.com/api-keys) |
+| Variable | Description |
+|---|---|
+| `MINDFORGE_DB_PATH` | Absolute path to a `.db` file. Wins over `MINDFORGE_DATA_DIR`. |
+| `MINDFORGE_DATA_DIR` | Directory in which `mindforge.db` will live. Useful for `~/.mindforge`. |
+| `MINDFORGE_EMBEDDINGS_DISABLED` | Set to `1` to skip the local embedder. Palace search falls back to keyword + recency. |
 
-## Database setup
+The SQLite file holds: notes, the wings/rooms taxonomy, embeddings (as BLOB), the passphrase hash, and the per-installation session secret. Nothing leaves your machine.
 
-Run the migrations in `supabase/migrations/` against your Supabase project (via `supabase db push`, the SQL editor, or any migration runner). v2.0 expects the `vector` extension and `wings` / `rooms` tables.
+## Production
 
-## Deployment
+```bash
+npm run build
+npm start
+```
 
-This app is designed for [Vercel](https://vercel.com):
-
-1. Connect your GitHub repository in the Vercel dashboard
-2. Add both environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) in **Settings → Environment Variables**
-3. Deploy — Vercel auto-detects Next.js and handles the build
+Run on a home server, a Raspberry Pi, a tiny VPS — anywhere Node 20+ runs. There's no managed-service contract.
 
 ## Scripts
 
@@ -55,5 +54,5 @@ This app is designed for [Vercel](https://vercel.com):
 | `npm run build` | Production build |
 | `npm start` | Start production server |
 | `npm test` | Run tests |
-| `npm run test:coverage` | Run tests with coverage report |
-| `npm run lint` | Run ESLint |
+| `npm run test:coverage` | Coverage report |
+| `npm run lint` | ESLint |

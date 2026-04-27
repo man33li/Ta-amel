@@ -41,7 +41,7 @@ describe('useNotes', () => {
       expect(result.current.error).toBeNull()
     })
 
-    it('fetches notes on mount', async () => {
+    it('fetches notes on mount, sorted newest first', async () => {
       mockStore.seedCards(testCards)
 
       const { result } = renderHook(() => useNotes())
@@ -54,31 +54,9 @@ describe('useNotes', () => {
       })
 
       expect(result.current.notes).toHaveLength(2)
-      expect(result.current.notes[0].title).toBe('First Note')
-    })
-
-    it('only fetches notes for current user', async () => {
-      const cardsWithOtherUser: Card[] = [
-        ...testCards,
-        {
-          id: 'card-other',
-          user_id: 'other-user-id',
-          title: 'Other User Note',
-          content: {},
-          created_at: '2026-01-22T10:00:00Z',
-          updated_at: '2026-01-22T10:00:00Z'
-        }
-      ]
-      mockStore.seedCards(cardsWithOtherUser)
-
-      const { result } = renderHook(() => useNotes())
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false)
-      })
-
-      // Should only have 2 notes (not the other user's note)
-      expect(result.current.notes).toHaveLength(2)
+      // Second Note has updated_at 2026-01-21T12:00 vs First Note's 2026-01-20T10:00.
+      expect(result.current.notes[0].title).toBe('Second Note')
+      expect(result.current.notes[1].title).toBe('First Note')
     })
   })
 

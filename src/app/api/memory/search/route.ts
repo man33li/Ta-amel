@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getMemory } from '@/lib/memory/client'
+import { requireAuth } from '@/lib/auth/guard'
+import { db } from '@/lib/db/repo'
+import { semanticSearch } from '@/lib/memory/store'
 import { mergeSearchHits } from '@/lib/memory/merge'
 import { extractTextFromTiptap } from '@/lib/utils'
 import type { Card, SearchHit } from '@/types'
@@ -10,10 +11,20 @@ export const dynamic = 'force-dynamic'
 
 const RECENT_WINDOW_MS = 1000 * 60 * 60 * 24 * 14 // 14 days
 
+interface CardRow {
+  id: string
+  title: string
+  content: string
+  updated_at: string
+  room_id: string | null
+}
+
 export async function GET(request: Request) {
+  const guard = await requireAuth()
+  if (guard) return guard
+
   const url = new URL(request.url)
   const q = url.searchParams.get('q')?.trim() ?? ''
-  const wingId = url.searchParams.get('wing_id')
   const roomId = url.searchParams.get('room_id')
   const limit = Number(url.searchParams.get('limit') ?? 10)
 
@@ -21,21 +32,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ memories: [], cards: [], hits: [] })
   }
 
-  const supabase = await createClient()
-  const { data: userData, error: userErr } = await supabase.auth.getUser()
-  if (userErr || !userData.user) {
-    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
-  }
-  const userId = userData.user.id
-
-  const memory = await getMemory()
-
   const [semantic, keyword, recent] = await Promise.all([
-    memory
-      .search({ query: q, userId, wingId, roomId, limit })
-      .catch(() => [] as SearchHit[]),
-    keywordSearch(supabase, { q, roomId, limit }),
-    recentSearch(supabase, { roomId, limit }),
+    semanticSearch({ query: q, roomId, limit }).catch(() => [] as SearchHit[]),
+    Promise.resolve(keywordSearch({ q, roomId, limit })),
+    Promise.resolve(recentSearch({ roomId, limit })),
   ])
 
   const merged = mergeSearchHits(semantic, keyword, recent, limit)
@@ -47,65 +47,81 @@ export async function GET(request: Request) {
   })
 }
 
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>
+function keywordSearch({
+  q,
+  roomId,
+  limit,
+}: {
+  q: string
+  roomId: string | null
+  limit: number
+}): SearchHit[] {
+  const pattern = `%${q.replace(/[%_]/g, '\\$&')}%`
+  const rows = roomId
+    ? (db()
+        .prepare(
+          `select id, title, content, updated_at, room_id from cards
+           where room_id = ? and (title like ? escape '\\' or content like ? escape '\\')
+           order by updated_at desc limit ?`
+        )
+        .all(roomId, pattern, pattern, limit) as CardRow[])
+    : (db()
+        .prepare(
+          `select id, title, content, updated_at, room_id from cards
+           where title like ? escape '\\' or content like ? escape '\\'
+           order by updated_at desc limit ?`
+        )
+        .all(pattern, pattern, limit) as CardRow[])
 
-async function keywordSearch(
-  supabase: SupabaseClient,
-  { q, roomId, limit }: { q: string; roomId: string | null; limit: number }
-): Promise<SearchHit[]> {
-  let query = supabase
-    .from('cards')
-    .select('id, title, content, updated_at, room_id')
-    .ilike('title', `%${q}%`)
-    .order('updated_at', { ascending: false })
-    .limit(limit)
-
-  if (roomId) query = query.eq('room_id', roomId)
-
-  const { data, error } = await query
-  if (error || !data) return []
-
-  return (data as Card[]).map((card) => ({
-    id: `card:${card.id}`,
-    card_id: card.id,
-    title: card.title,
-    preview: extractTextFromTiptap(
-      card.content as Record<string, unknown>,
-      200
-    ),
-    score: 0,
-    source: 'keyword' as const,
-    updated_at: card.updated_at,
-  }))
+  return rows.map(rowToHit('keyword'))
 }
 
-async function recentSearch(
-  supabase: SupabaseClient,
-  { roomId, limit }: { roomId: string | null; limit: number }
-): Promise<SearchHit[]> {
+function recentSearch({
+  roomId,
+  limit,
+}: {
+  roomId: string | null
+  limit: number
+}): SearchHit[] {
   const since = new Date(Date.now() - RECENT_WINDOW_MS).toISOString()
-  let query = supabase
-    .from('cards')
-    .select('id, title, content, updated_at, room_id')
-    .gte('updated_at', since)
-    .order('updated_at', { ascending: false })
-    .limit(limit)
+  const rows = roomId
+    ? (db()
+        .prepare(
+          `select id, title, content, updated_at, room_id from cards
+           where room_id = ? and updated_at >= ?
+           order by updated_at desc limit ?`
+        )
+        .all(roomId, since, limit) as CardRow[])
+    : (db()
+        .prepare(
+          `select id, title, content, updated_at, room_id from cards
+           where updated_at >= ?
+           order by updated_at desc limit ?`
+        )
+        .all(since, limit) as CardRow[])
 
-  if (roomId) query = query.eq('room_id', roomId)
+  return rows.map(rowToHit('recent'))
+}
 
-  const { data, error } = await query
-  if (error || !data) return []
+function rowToHit(source: SearchHit['source']) {
+  return (row: CardRow): SearchHit => {
+    const content = parseContent(row.content) as Card['content']
+    return {
+      id: `card:${row.id}`,
+      card_id: row.id,
+      title: row.title,
+      preview: extractTextFromTiptap(content as Record<string, unknown>, 200),
+      score: 0,
+      source,
+      updated_at: row.updated_at,
+    }
+  }
+}
 
-  return (data as Card[]).map((card) => ({
-    id: `card:${card.id}`,
-    card_id: card.id,
-    title: card.title,
-    preview: extractTextFromTiptap(
-      card.content as Record<string, unknown>,
-      200
-    ),
-    score: 0,
-    source: 'recent' as const,
-    updated_at: card.updated_at,
-  }))
+function parseContent(raw: string): unknown {
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return {}
+  }
 }

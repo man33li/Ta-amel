@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getMemory } from '@/lib/memory/client'
-import { extractTextFromTiptap } from '@/lib/utils'
+import { requireAuth } from '@/lib/auth/guard'
+import { getCard } from '@/lib/db/repo'
+import { syncCardEmbedding } from '@/lib/memory/store'
+import { isEmbeddingDisabled } from '@/lib/embed/embedder'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -11,6 +12,9 @@ interface SyncRequest {
 }
 
 export async function POST(request: Request) {
+  const guard = await requireAuth()
+  if (guard) return guard
+
   let body: SyncRequest
   try {
     body = (await request.json()) as SyncRequest
@@ -19,54 +23,26 @@ export async function POST(request: Request) {
   }
 
   if (!body.cardId) {
-    return NextResponse.json({ ok: false, error: 'missing_card_id' }, { status: 400 })
+    return NextResponse.json(
+      { ok: false, error: 'missing_card_id' },
+      { status: 400 }
+    )
   }
 
-  const supabase = await createClient()
-  const { data: userData, error: userErr } = await supabase.auth.getUser()
-  if (userErr || !userData.user) {
-    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
+  if (isEmbeddingDisabled()) {
+    return NextResponse.json({ ok: true, synced: false, reason: 'disabled' })
   }
 
-  const { data: card, error: cardErr } = await supabase
-    .from('cards')
-    .select('id, title, content, room_id')
-    .eq('id', body.cardId)
-    .single()
-
-  if (cardErr || !card) {
+  const card = getCard(body.cardId)
+  if (!card) {
     return NextResponse.json({ ok: false, error: 'not_found' }, { status: 404 })
   }
 
-  let wingId: string | null = null
-  if (card.room_id) {
-    const { data: room } = await supabase
-      .from('rooms')
-      .select('wing_id')
-      .eq('id', card.room_id)
-      .single()
-    wingId = room?.wing_id ?? null
-  }
-
-  const text = extractTextFromTiptap(card.content as Record<string, unknown>)
-  const composed = card.title ? `${card.title}\n\n${text}` : text
-
-  const memory = await getMemory()
-  if (!memory.available || !composed.trim()) {
-    return NextResponse.json({ ok: true, synced: false })
-  }
-
   try {
-    await memory.add({
-      content: composed,
-      userId: userData.user.id,
-      cardId: card.id,
-      wingId,
-      roomId: card.room_id ?? null,
-    })
+    await syncCardEmbedding(card)
     return NextResponse.json({ ok: true, synced: true })
   } catch {
-    // Sync failures must never bubble up — the card is already saved.
+    // The card itself is already saved; embedding failures must never bubble.
     return NextResponse.json({ ok: true, synced: false })
   }
 }

@@ -5,39 +5,48 @@ import { useRouter } from 'next/navigation'
 import { Spinner } from '@/components/ui/Spinner'
 
 /**
- * Login Page (v3.0 — local-first, single-user passphrase only).
+ * First-run setup page. Pick a passphrase; we hash it (bcrypt) and store
+ * the hash locally. There's no recovery — if you lose the passphrase, the
+ * data on disk is still readable (SQLite isn't encrypted at rest), but the
+ * UI won't let you back in until you pick a new one. That's by design for a
+ * single-user local app.
  */
 export const dynamic = 'force-dynamic'
 
-export default function LoginPage() {
+export default function SetupPage() {
   const [passphrase, setPassphrase] = useState('')
+  const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
+    if (passphrase.length < 8) {
+      setError('Passphrase must be at least 8 characters.')
+      return
+    }
+    if (passphrase !== confirm) {
+      setError('Passphrases do not match.')
+      return
+    }
 
+    setLoading(true)
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/setup', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ passphrase }),
       })
       if (res.status === 409) {
-        // App not yet set up — divert to /setup.
-        router.push('/setup')
+        // Already set up on a previous run — bounce to login.
+        router.push('/login')
         return
       }
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string }
-        setError(
-          data.error === 'invalid_passphrase'
-            ? 'Wrong passphrase'
-            : 'Login failed'
-        )
+        setError(data.error ?? 'Setup failed')
         setLoading(false)
         return
       }
@@ -53,10 +62,10 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            MindForge
+            Set up MindForge
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Local-first notes. Enter your passphrase.
+            Pick a passphrase to lock your local notes. Used only on this device.
           </p>
         </div>
 
@@ -72,16 +81,36 @@ export default function LoginPage() {
               htmlFor="passphrase"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
-              Passphrase
+              Passphrase (min 8 characters)
             </label>
             <input
               id="passphrase"
               type="password"
               autoFocus
-              autoComplete="current-password"
+              autoComplete="new-password"
               value={passphrase}
               onChange={(e) => setPassphrase(e.target.value)}
               required
+              minLength={8}
+              className="mt-1 block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="confirm"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Confirm passphrase
+            </label>
+            <input
+              id="confirm"
+              type="password"
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+              minLength={8}
               className="mt-1 block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -93,21 +122,13 @@ export default function LoginPage() {
           >
             {loading ? (
               <>
-                <Spinner size="sm" className="inline mr-2" /> Unlocking...
+                <Spinner size="sm" className="inline mr-2" /> Saving...
               </>
             ) : (
-              'Unlock'
+              'Create passphrase'
             )}
           </button>
         </form>
-
-        <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-          First time on this machine?{' '}
-          <a href="/setup" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
-            Set a passphrase
-          </a>
-          .
-        </p>
       </div>
     </div>
   )

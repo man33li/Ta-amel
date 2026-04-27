@@ -1,239 +1,262 @@
 import '@testing-library/jest-dom'
 import { vi, beforeEach } from 'vitest'
-import type { Card, Wing, Room } from '@/types'
+import type { Card, Wing, Room, SearchHit } from '@/types'
 
 // ============================================================================
-// MOCK DATA STORE (COP: Flat arrays, explicit relationships)
+// MOCK DATA STORE
 // ============================================================================
+
 export const mockStore = {
   cards: [] as Card[],
   wings: [] as Wing[],
   rooms: [] as Room[],
-  currentUser: { id: 'test-user-id', email: 'test@example.com' } as { id: string; email: string } | null,
-
+  authenticated: true, // assume logged in for most tests
   reset() {
     this.cards = []
     this.wings = []
     this.rooms = []
-    this.currentUser = { id: 'test-user-id', email: 'test@example.com' }
+    this.authenticated = true
   },
-
   seedCards(cards: Card[]) {
     this.cards = [...cards]
   },
-
   seedWings(wings: Wing[]) {
     this.wings = [...wings]
   },
-
   seedRooms(rooms: Room[]) {
     this.rooms = [...rooms]
-  }
-}
-
-// Fire-and-forget /api/memory/sync calls in useNotes must not pollute test
-// output. Stub global fetch to a successful no-op when present.
-if (typeof globalThis.fetch === 'undefined') {
-  globalThis.fetch = vi.fn().mockResolvedValue(
-    new Response(JSON.stringify({ ok: true }), { status: 200 })
-  )
-} else {
-  vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-    new Response(JSON.stringify({ ok: true }), { status: 200 })
-  )
-}
-
-// Reset before each test
-beforeEach(() => {
-  mockStore.reset()
-})
-
-// ============================================================================
-// SUPABASE CLIENT MOCK
-// ============================================================================
-export const createMockSupabaseClient = () => ({
-  auth: {
-    getUser: vi.fn().mockImplementation(async () => ({
-      data: { user: mockStore.currentUser },
-      error: null
-    })),
-    getSession: vi.fn().mockImplementation(async () => ({
-      data: { session: mockStore.currentUser ? { user: mockStore.currentUser } : null },
-      error: null
-    })),
-    signInWithPassword: vi.fn().mockImplementation(async ({ email, password }) => {
-      if (email === 'test@example.com' && password === 'password123') {
-        mockStore.currentUser = { id: 'test-user-id', email }
-        return { data: { user: mockStore.currentUser }, error: null }
-      }
-      return { data: { user: null }, error: { message: 'Invalid credentials' } }
-    }),
-    signInWithOAuth: vi.fn().mockImplementation(async () => ({
-      data: { url: 'https://oauth.example.com' },
-      error: null
-    })),
-    signUp: vi.fn().mockImplementation(async ({ email }) => {
-      mockStore.currentUser = { id: 'new-user-id', email }
-      return { data: { user: mockStore.currentUser }, error: null }
-    }),
-    signOut: vi.fn().mockImplementation(async () => {
-      mockStore.currentUser = null
-      return { error: null }
-    }),
-    onAuthStateChange: vi.fn().mockReturnValue({
-      data: { subscription: { unsubscribe: vi.fn() } }
-    })
   },
-  from: vi.fn().mockImplementation((table: string) => {
-    if (table === 'wings') return makeTableMock('wings')
-    if (table === 'rooms') return makeTableMock('rooms')
-    if (table !== 'cards') return {}
-
-    return {
-      select: vi.fn().mockReturnValue({
-        order: vi.fn().mockImplementation(async () => ({
-          data: mockStore.cards.filter(c => c.user_id === mockStore.currentUser?.id),
-          error: null
-        })),
-        eq: vi.fn().mockImplementation((field: string, value: string) => ({
-          single: vi.fn().mockImplementation(async () => {
-            const card = mockStore.cards.find(c => c.id === value)
-            return { data: card || null, error: card ? null : { message: 'Not found' } }
-          })
-        }))
-      }),
-      insert: vi.fn().mockImplementation((data: Partial<Card>) => ({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockImplementation(async () => {
-            const newCard: Card = {
-              id: `card-${Date.now()}`,
-              user_id: mockStore.currentUser?.id || '',
-              title: data.title || 'Untitled',
-              content: data.content || {},
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-            mockStore.cards.push(newCard)
-            return { data: newCard, error: null }
-          })
-        })
-      })),
-      update: vi.fn().mockImplementation((data: Partial<Card>) => ({
-        eq: vi.fn().mockImplementation((field: string, value: string) => ({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockImplementation(async () => {
-              const index = mockStore.cards.findIndex(c => c.id === value)
-              if (index === -1) return { data: null, error: { message: 'Not found' } }
-              mockStore.cards[index] = { 
-                ...mockStore.cards[index], 
-                ...data, 
-                updated_at: new Date().toISOString() 
-              }
-              return { data: mockStore.cards[index], error: null }
-            })
-          })
-        }))
-      })),
-      delete: vi.fn().mockReturnValue({
-        eq: vi.fn().mockImplementation((field: string, value: string) => {
-          // Return a promise that resolves with the result
-          const result = Promise.resolve({ error: null })
-          // Side effect: remove from store
-          mockStore.cards = mockStore.cards.filter(c => c.id !== value)
-          return result
-        })
-      })
-    }
-  })
-})
-
-// Generic table mock for wings/rooms (palace tests). Mirrors the card path
-// but stays simple since palace CRUD doesn't exercise filtering shapes.
-type TableName = 'wings' | 'rooms'
-function makeTableMock(table: TableName) {
-  const list = () =>
-    (mockStore[table] as Array<{ user_id: string; id: string }>).filter(
-      (row) => row.user_id === mockStore.currentUser?.id
-    )
-
-  const select = vi.fn(() => ({
-    order: vi.fn(async () => ({ data: list(), error: null })),
-    eq: vi.fn((_field: string, value: string) => ({
-      order: vi.fn(async () => ({
-        data: list().filter((row) =>
-          'wing_id' in row
-            ? (row as unknown as { wing_id: string }).wing_id === value
-            : row.id === value
-        ),
-        error: null,
-      })),
-      single: vi.fn(async () => {
-        const row = list().find((r) => r.id === value)
-        return {
-          data: row ?? null,
-          error: row ? null : { message: 'Not found' },
-        }
-      }),
-    })),
-  }))
-
-  const insert = vi.fn((data: Record<string, unknown>) => ({
-    select: vi.fn(() => ({
-      single: vi.fn(async () => {
-        const id = `${table.slice(0, -1)}-${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2, 6)}`
-        const row = {
-          id,
-          user_id: mockStore.currentUser?.id ?? '',
-          ...data,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-        ;(mockStore[table] as unknown as Array<typeof row>).push(row)
-        return { data: row, error: null }
-      }),
-    })),
-  }))
-
-  const update = vi.fn((data: Record<string, unknown>) => ({
-    eq: vi.fn((_field: string, value: string) => ({
-      select: vi.fn(() => ({
-        single: vi.fn(async () => {
-          const arr = mockStore[table] as Array<{ id: string }>
-          const idx = arr.findIndex((r) => r.id === value)
-          if (idx === -1)
-            return { data: null, error: { message: 'Not found' } }
-          arr[idx] = {
-            ...arr[idx],
-            ...data,
-            updated_at: new Date().toISOString(),
-          } as (typeof arr)[number]
-          return { data: arr[idx], error: null }
-        }),
-      })),
-    })),
-  }))
-
-  const del = vi.fn(() => ({
-    eq: vi.fn((_field: string, value: string) => {
-      const arr = mockStore[table] as Array<{ id: string }>
-      ;(mockStore as unknown as Record<string, unknown>)[table] = arr.filter(
-        (r) => r.id !== value
-      )
-      return Promise.resolve({ error: null })
-    }),
-  }))
-
-  return { select, insert, update, delete: del }
 }
 
-// Global Supabase mock
-vi.mock('@/lib/supabase/client', () => ({
-  createClient: () => createMockSupabaseClient()
-}))
+beforeEach(() => mockStore.reset())
 
-// Mock next/navigation
+// ============================================================================
+// FETCH MOCK — simulates the v3.0 API surface against the in-memory store.
+// ============================================================================
+
+const json = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  })
+
+const newId = (prefix: string) =>
+  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+
+interface FetchInput {
+  url: string
+  method: string
+  body: unknown
+}
+
+const parseInput = async (
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<FetchInput> => {
+  const url = typeof input === 'string' ? input : input.toString()
+  const method = (init?.method ?? 'GET').toUpperCase()
+  let body: unknown = null
+  if (init?.body) {
+    try {
+      body = JSON.parse(init.body as string)
+    } catch {
+      body = init.body
+    }
+  }
+  return { url, method, body }
+}
+
+async function handleFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> {
+  const { url, method, body } = await parseInput(input, init)
+  const path = url.startsWith('http') ? new URL(url).pathname + new URL(url).search : url
+  const [pathname, query = ''] = path.split('?')
+  const params = new URLSearchParams(query)
+
+  if (!mockStore.authenticated && !pathname.startsWith('/api/auth/')) {
+    return json({ ok: false, error: 'unauthorized' }, 401)
+  }
+
+  // Auth -----------------------------------------------------------------
+  if (pathname === '/api/auth/session' && method === 'GET') {
+    return json({ setUp: true, authenticated: mockStore.authenticated })
+  }
+  if (pathname === '/api/auth/login' && method === 'POST') {
+    mockStore.authenticated = true
+    return json({ ok: true })
+  }
+  if (pathname === '/api/auth/logout' && method === 'POST') {
+    mockStore.authenticated = false
+    return json({ ok: true })
+  }
+  if (pathname === '/api/auth/setup' && method === 'POST') {
+    mockStore.authenticated = true
+    return json({ ok: true })
+  }
+
+  // Cards ----------------------------------------------------------------
+  if (pathname === '/api/cards' && method === 'GET') {
+    const roomId = params.get('room_id')
+    const cards = roomId
+      ? mockStore.cards.filter((c) => c.room_id === roomId)
+      : [...mockStore.cards]
+    cards.sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    return json({ cards })
+  }
+  if (pathname === '/api/cards' && method === 'POST') {
+    const b = (body ?? {}) as {
+      title?: string
+      content?: Record<string, unknown>
+      room_id?: string | null
+    }
+    const card: Card = {
+      id: newId('card'),
+      user_id: 'me',
+      title: b.title ?? 'Untitled',
+      content: b.content ?? {},
+      room_id: b.room_id ?? null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    mockStore.cards.unshift(card)
+    return json({ card }, 201)
+  }
+  const cardIdMatch = pathname.match(/^\/api\/cards\/([^/]+)$/)
+  if (cardIdMatch) {
+    const id = cardIdMatch[1]
+    const idx = mockStore.cards.findIndex((c) => c.id === id)
+    if (method === 'GET') {
+      const card = mockStore.cards[idx]
+      return card ? json({ card }) : json({ ok: false, error: 'not_found' }, 404)
+    }
+    if (method === 'PATCH') {
+      if (idx === -1) return json({ ok: false, error: 'not_found' }, 404)
+      const b = (body ?? {}) as Partial<Card>
+      mockStore.cards[idx] = {
+        ...mockStore.cards[idx],
+        ...b,
+        updated_at: new Date().toISOString(),
+      }
+      return json({ card: mockStore.cards[idx] })
+    }
+    if (method === 'DELETE') {
+      if (idx === -1) return json({ ok: false, error: 'not_found' }, 404)
+      mockStore.cards.splice(idx, 1)
+      return json({ ok: true })
+    }
+  }
+
+  // Wings ----------------------------------------------------------------
+  if (pathname === '/api/wings' && method === 'GET') {
+    return json({ wings: [...mockStore.wings] })
+  }
+  if (pathname === '/api/wings' && method === 'POST') {
+    const b = (body ?? {}) as { name?: string; color?: string | null }
+    const wing: Wing = {
+      id: newId('wing'),
+      user_id: 'me',
+      name: b.name ?? '',
+      color: b.color ?? null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    mockStore.wings.push(wing)
+    return json({ wing }, 201)
+  }
+  const wingIdMatch = pathname.match(/^\/api\/wings\/([^/]+)$/)
+  if (wingIdMatch) {
+    const id = wingIdMatch[1]
+    const idx = mockStore.wings.findIndex((w) => w.id === id)
+    if (method === 'PATCH') {
+      if (idx === -1) return json({ ok: false, error: 'not_found' }, 404)
+      const b = (body ?? {}) as Partial<Wing>
+      mockStore.wings[idx] = {
+        ...mockStore.wings[idx],
+        ...b,
+        updated_at: new Date().toISOString(),
+      }
+      return json({ wing: mockStore.wings[idx] })
+    }
+    if (method === 'DELETE') {
+      if (idx === -1) return json({ ok: false, error: 'not_found' }, 404)
+      mockStore.wings.splice(idx, 1)
+      // Cascade: rooms in this wing go away too.
+      mockStore.rooms = mockStore.rooms.filter((r) => r.wing_id !== id)
+      return json({ ok: true })
+    }
+  }
+
+  // Rooms ----------------------------------------------------------------
+  if (pathname === '/api/rooms' && method === 'GET') {
+    const wingId = params.get('wing_id')
+    const rooms = wingId
+      ? mockStore.rooms.filter((r) => r.wing_id === wingId)
+      : [...mockStore.rooms]
+    return json({ rooms })
+  }
+  if (pathname === '/api/rooms' && method === 'POST') {
+    const b = (body ?? {}) as {
+      wing_id?: string
+      name?: string
+      description?: string | null
+    }
+    if (!b.wing_id || !b.name) {
+      return json({ ok: false, error: 'wing_id_and_name_required' }, 400)
+    }
+    const room: Room = {
+      id: newId('room'),
+      wing_id: b.wing_id,
+      user_id: 'me',
+      name: b.name,
+      description: b.description ?? null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    mockStore.rooms.push(room)
+    return json({ room }, 201)
+  }
+  const roomIdMatch = pathname.match(/^\/api\/rooms\/([^/]+)$/)
+  if (roomIdMatch) {
+    const id = roomIdMatch[1]
+    const idx = mockStore.rooms.findIndex((r) => r.id === id)
+    if (method === 'PATCH') {
+      if (idx === -1) return json({ ok: false, error: 'not_found' }, 404)
+      const b = (body ?? {}) as Partial<Room>
+      mockStore.rooms[idx] = {
+        ...mockStore.rooms[idx],
+        ...b,
+        updated_at: new Date().toISOString(),
+      }
+      return json({ room: mockStore.rooms[idx] })
+    }
+    if (method === 'DELETE') {
+      if (idx === -1) return json({ ok: false, error: 'not_found' }, 404)
+      mockStore.rooms.splice(idx, 1)
+      return json({ ok: true })
+    }
+  }
+
+  // Memory ---------------------------------------------------------------
+  if (pathname === '/api/memory/sync' && method === 'POST') {
+    return json({ ok: true, synced: false })
+  }
+  if (pathname === '/api/memory/search' && method === 'GET') {
+    return json({ memories: [], cards: [], hits: [] as SearchHit[] })
+  }
+
+  return json({ ok: false, error: 'not_found' }, 404)
+}
+
+vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) =>
+  handleFetch(input as RequestInfo | URL, init as RequestInit | undefined)
+)
+
+// ============================================================================
+// next/navigation, next/headers — unchanged from v2.0
+// ============================================================================
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
@@ -250,7 +273,6 @@ vi.mock('next/navigation', () => ({
   notFound: vi.fn(),
 }))
 
-// Mock next/headers (for server components testing)
 vi.mock('next/headers', () => ({
   cookies: () => ({
     get: vi.fn(),
@@ -260,16 +282,3 @@ vi.mock('next/headers', () => ({
   }),
   headers: () => new Headers(),
 }))
-
-// Suppress console.error for expected test failures (optional)
-// Uncomment if needed:
-// const originalError = console.error
-// beforeAll(() => {
-//   console.error = (...args: unknown[]) => {
-//     if (typeof args[0] === 'string' && args[0].includes('Warning:')) return
-//     originalError.call(console, ...args)
-//   }
-// })
-// afterAll(() => {
-//   console.error = originalError
-// })
