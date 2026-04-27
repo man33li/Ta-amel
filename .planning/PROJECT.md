@@ -2,27 +2,30 @@
 
 ## What This Is
 
-A personal note-taking application with rich text editing, built on Next.js and Supabase. Production-ready with comprehensive testing, error handling, and live deployment.
+A local-first personal note app. Rich text editing, semantic recall over your own notes, and a memory-palace navigation (wings → rooms → cards). Runs entirely on the user's machine — no Supabase, no OpenAI, no Vercel, no recurring bills.
 
 ## Core Value
 
-Notes are saved reliably and the app deploys without issues.
+Notes are saved reliably, recoverable by recall (semantic + keyword + recency), and grouped where the user remembers them. No subscription can pull the rug.
 
 ## Current State
 
-**Version:** v1.0 Production Ready (shipped 2026-01-27)
-**Live at:** https://mindforge-eight.vercel.app
+**Version:** v3.0 implemented (branch `feat/v3.0-local-first`, commit `c314027`, 2026-04-27). Awaiting user merge + first real local run.
 
-**Tech Stack:**
-- Next.js 16.1.4 with App Router
-- Supabase for auth and database
-- Tiptap 3.17.1 for rich text editing
-- Zustand 5.0.10 for UI state
-- Vitest + React Testing Library (114 tests, 89% coverage)
+**Tech Stack (v3.0):**
+- Next.js 16.1.4 with App Router on React 19
+- SQLite via `better-sqlite3` (one file on disk)
+- `@xenova/transformers` running `Xenova/all-MiniLM-L6-v2` for in-process embeddings
+- `iron-session` cookie + bcrypt-hashed passphrase for single-user auth
+- Tiptap 3 editor, Zustand 5 store, Tailwind 4
+- Vitest 4 + React Testing Library (104 tests passing)
 
-**Codebase:**
-- 35 files, ~11,000 lines TypeScript/React
-- 4-layer architecture (documented in `.planning/codebase/`)
+**Detailed stack reference:** `/CLAUDE.md` at the repo root (loaded automatically by Claude Code).
+
+**Milestones:**
+- v1.0 (2026-01-27) — shipped cloud-backed app on Vercel + Supabase
+- v2.0 (2026-04-27, `feat/v2.0-palace-memory`) — added mem0ai memory + palace UX, still cloud-backed
+- v3.0 (2026-04-27, `feat/v3.0-local-first`) — current direction; dropped all subscription services
 
 ## Requirements
 
@@ -52,13 +55,20 @@ Notes are saved reliably and the app deploys without issues.
 
 <!-- Current scope. Building toward these. -->
 
-v2.0 — AI memory + spatial UX:
-- User can group notes into wings (top-level) and rooms (topics) — v2.0
-- User can browse a /palace page with three panes: wings → rooms → cards — v2.0
-- User can move a card between rooms from the card itself — v2.0
-- User can search the palace and see ranked results from semantic + keyword + recent lanes, each labeled by source — v2.0
-- Edits trigger a fire-and-forget memory sync that does not block the editor — v2.0
-- Without OPENAI_API_KEY the palace still works on keyword + recency only — v2.0
+v3.0 — local-first follow-ups (post-implementation tightening):
+- Server-side test coverage for new auth / repo / embedder / memory layers — v3.0
+- Fix the session-secret race in `src/lib/auth/session.ts:getSessionPassword` — v3.0
+- Add confirmation step to the Header Lock button — v3.0
+- (Optional) Dockerfile for home-server deployment — v3.0
+- (Optional) Export/import SQLite ↔ JSON — v3.0
+
+v2.0 — AI memory + spatial UX (implemented, superseded by v3.0 for runtime):
+- ✓ User can group notes into wings (top-level) and rooms (topics) — v2.0/v3.0
+- ✓ User can browse a /palace page with three panes: wings → rooms → cards — v2.0/v3.0
+- ✓ User can move a card between rooms from the card itself — v2.0/v3.0
+- ✓ User can search the palace and see ranked results from semantic + keyword + recent lanes, each labeled by source — v2.0/v3.0
+- ✓ Edits trigger a fire-and-forget memory sync that does not block the editor — v2.0/v3.0
+- ✓ Memory degrades gracefully when the embedder is disabled — v2.0/v3.0
 
 ### Out of Scope
 
