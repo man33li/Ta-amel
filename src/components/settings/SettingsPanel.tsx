@@ -14,10 +14,61 @@ const ERROR_LABELS: Record<string, string> = {
   invalid_payload: 'The file does not look like a MindForge backup.',
 }
 
+const REKEY_ERROR_LABELS: Record<string, string> = {
+  fields_required: 'Fill in both passphrases.',
+  invalid_current_passphrase: 'Current passphrase is wrong.',
+  passphrase_too_short: 'New passphrase must be at least 8 characters.',
+  rekey_failed: 'Could not change passphrase. Your data is unchanged.',
+}
+
 export function SettingsPanel() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [importing, setImporting] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
+
+  const [current, setCurrent] = useState('')
+  const [nextPass, setNextPass] = useState('')
+  const [confirmPass, setConfirmPass] = useState('')
+  const [rekeying, setRekeying] = useState(false)
+
+  const handleRekey = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!current || !nextPass) {
+      toast.error(REKEY_ERROR_LABELS.fields_required)
+      return
+    }
+    if (nextPass.length < 8) {
+      toast.error(REKEY_ERROR_LABELS.passphrase_too_short)
+      return
+    }
+    if (nextPass !== confirmPass) {
+      toast.error('New passphrases do not match.')
+      return
+    }
+
+    setRekeying(true)
+    try {
+      const res = await fetch('/api/auth/rekey', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ current, next: nextPass }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data.ok === false) {
+        const label = REKEY_ERROR_LABELS[data.error] ?? 'Could not change passphrase.'
+        toast.error(label)
+      } else {
+        toast.success('Passphrase changed.')
+        setCurrent('')
+        setNextPass('')
+        setConfirmPass('')
+      }
+    } catch {
+      toast.error('Network error.')
+    } finally {
+      setRekeying(false)
+    }
+  }
 
   const readFileText = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -112,6 +163,77 @@ export function SettingsPanel() {
             </p>
           </div>
         )}
+      </section>
+
+      {/* Change passphrase */}
+      <section className="rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+          Change passphrase
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Re-encrypts your database in place. The old passphrase stops working
+          on the next process restart. Pick something you can remember — there
+          is still no recovery.
+        </p>
+        <form onSubmit={handleRekey} className="space-y-3 max-w-md">
+          <div>
+            <label
+              htmlFor="rekey-current"
+              className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Current passphrase
+            </label>
+            <input
+              id="rekey-current"
+              type="password"
+              autoComplete="current-password"
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="rekey-next"
+              className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              New passphrase (min 8 characters)
+            </label>
+            <input
+              id="rekey-next"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              value={nextPass}
+              onChange={(e) => setNextPass(e.target.value)}
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="rekey-confirm"
+              className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Confirm new passphrase
+            </label>
+            <input
+              id="rekey-confirm"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              value={confirmPass}
+              onChange={(e) => setConfirmPass(e.target.value)}
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={rekeying}
+            className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            {rekeying ? 'Re-encrypting…' : 'Change passphrase'}
+          </button>
+        </form>
       </section>
     </div>
   )

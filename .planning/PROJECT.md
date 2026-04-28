@@ -56,12 +56,15 @@ Notes are saved reliably, recoverable by recall (semantic + keyword + recency), 
 - ✓ One-command Docker deploy — v3.1
 - ✓ Backup and restore via /api/export and /api/import — v3.1
 - ✓ Encrypted SQLite at rest (SQLCipher v4 via better-sqlite3-multiple-ciphers) — v3.1
+- ✓ Setup page warns the user that the passphrase is the encryption key and there is no recovery — v3.1
+- ✓ README documents SQLCipher, /settings, export/import, MINDFORGE_DISABLE_ENCRYPTION, Docker — v3.1
+- ✓ Change-passphrase (rekey) UI in /settings backed by /api/auth/rekey — v3.1
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-None on the follow-up list — all seven priorities shipped. Real local use will surface the next set.
+None on the follow-up list — all eight priorities shipped, including rekey. Real local use will surface the next set.
 
 v2.0 — AI memory + spatial UX (implemented, superseded by v3.0 for runtime):
 - ✓ User can group notes into wings (top-level) and rooms (topics) — v2.0/v3.0
@@ -92,7 +95,6 @@ v2.0 — AI memory + spatial UX (implemented, superseded by v3.0 for runtime):
 Carried from v1.0/v2.0:
 - TiptapEditor test coverage at 67.74% (jsdom limitations)
 - Note-edit page kept its own fetch loop instead of going through `useNotes` (debounce constraint)
-- Setup is one-shot — no UI flow to rekey an existing encrypted DB (would need a SQLCipher `PRAGMA rekey` action behind a confirm modal)
 
 ## Key Decisions
 
@@ -106,6 +108,8 @@ Carried from v1.0/v2.0:
 | No knowledge graph, no LLM rerank, no auto-tag | Earn complexity with usage data | ✓ Good — Hybrid retrieval (semantic + keyword + recent) via RRF is enough for v3.0 |
 | Fresh start, no v1/v2 data migration | User explicit choice | ✓ Good — Clean v3.0 schema, no migration code |
 | SQLCipher via `better-sqlite3-multiple-ciphers` | Same API as `better-sqlite3`, no rewrite; passphrase becomes the AES-256 key | ✓ Good — file unrecognisable on disk without key, build + tests + Windows native all clean |
+| In-app rekey verifies via bcrypt, not via re-`unlockDb` | The cached encrypted handle short-circuits `unlockDb` to true regardless of key, so a separate `verifyCurrentPassphrase` is required for in-session checks | ✓ Good — rekey API rejects wrong current passphrase even after login |
+| Rekey drops to DELETE journal mode then restores WAL | SQLCipher refuses `PRAGMA rekey` while WAL is active | ✓ Good — three integration tests assert old key is rejected, new key works, handle stays usable |
 
 ---
-*Last updated: 2026-04-28 — SQLCipher integration completes the v3.0 follow-up list*
+*Last updated: 2026-04-28 — Rekey UI + setup-page recovery warning + README rewrite complete the v3.1 polish pass*

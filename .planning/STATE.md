@@ -6,14 +6,14 @@ See: `.planning/PROJECT.md` (updated 2026-04-28)
 Stack & conventions: `/CLAUDE.md` at the repo root.
 
 **Core value:** Local-first notes that survive subscription churn, with semantic recall and a memory-palace for finding things by where you put them.
-**Current focus:** v3.0 — all open follow-ups (1–7) shipped on `feat/v3.0-local-first` and force-pushed to `main`.
+**Current focus:** v3.1 — all eight follow-ups shipped including rekey UI on `feat/v3.0-local-first`; awaiting user merge + first real local run.
 
 ## Current Position
 
-Phase: v3.0 + all follow-ups shipped; awaiting user merge + first real local run
+Phase: v3.1 polish pass shipped; awaiting user merge + first real local run
 Plan: `.planning/milestones/v3.0-LOCAL-FIRST.md`
-Status: 18 commits on `feat/v3.0-local-first`, also live on `main` (force-pushed 2026-04-28)
-Last activity: 2026-04-28 — SQLCipher integration via better-sqlite3-multiple-ciphers
+Status: 18 base commits + uncommitted rekey/README/setup-warning polish on `feat/v3.0-local-first`
+Last activity: 2026-04-28 — Rekey UI (`/api/auth/rekey` + Settings form) + setup-page recovery warning + README rewrite. 291 tests passing (was 279).
 
 ## Progress
 
@@ -21,7 +21,7 @@ Last activity: 2026-04-28 — SQLCipher integration via better-sqlite3-multiple-
 v1.0: ██████████ 100% ✓ SHIPPED            (2026-01-27)
 v2.0: ██████████ 100% ✓ IMPLEMENTED        (2026-04-27, branch feat/v2.0-palace-memory)
 v3.0: ██████████ 100% ✓ IMPLEMENTED        (2026-04-27, branch feat/v3.0-local-first)
-v3.1: ██████████ 100% ✓ FOLLOW-UPS SHIPPED (2026-04-28, on feat/v3.0-local-first / main)
+v3.1: ██████████ 100% ✓ FOLLOW-UPS + REKEY (2026-04-28, on feat/v3.0-local-first)
 ```
 
 ## Accumulated Context
@@ -38,7 +38,7 @@ v3.1: ██████████ 100% ✓ FOLLOW-UPS SHIPPED (2026-04-28, on
 
 ### Pending Todos
 
-None on the v3.0 follow-up list — all seven priorities shipped. Future work is whatever surfaces from real local use.
+None on the v3.0 follow-up list — all eight priorities shipped (the eighth being rekey UI, called out in CLAUDE.md as the most likely next-session item). Future work is whatever surfaces from real local use.
 
 ### Blockers / Concerns
 
@@ -57,4 +57,4 @@ Stopped at: All seven v3.0 follow-ups shipped, including SQLCipher; pushed to `m
 Resume file: `/CLAUDE.md` (loaded automatically) + this file
 
 ---
-*State updated: 2026-04-28 after SQLCipher integration*
+*State updated: 2026-04-28 after rekey UI + README rewrite + setup-page recovery warning*

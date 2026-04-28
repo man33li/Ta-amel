@@ -99,13 +99,13 @@ If you can't reach Google Fonts (sandbox / offline), the `NEXT_TURBOPACK…` env
 | v1.0 | shipped 2026-01-27 | merged | Cloud-backed: Supabase auth + Postgres, Tiptap, Vercel. 114 tests, 89% coverage. |
 | v2.0 | implemented 2026-04-27 | `feat/v2.0-palace-memory` | mem0ai memory layer + wings/rooms/cards palace UX. Still cloud-backed. |
 | v3.0 | implemented 2026-04-27 | `feat/v3.0-local-first` | Drops Supabase, OpenAI, Vercel. SQLite + local embeddings + passphrase auth. |
-| v3.1 | shipped 2026-04-28 | `feat/v3.0-local-first` / `main` | All v3.0 follow-ups: server test coverage, session-race fix, lock confirm, Dockerfile, export/import, SQLCipher at rest. 279 tests passing. |
+| v3.1 | shipped 2026-04-28 | `feat/v3.0-local-first` / `main` | All v3.0 follow-ups: server test coverage, session-race fix, lock confirm, Dockerfile, export/import, SQLCipher at rest, rekey UI, setup-page recovery warning, README rewrite. 291 tests passing. |
 
 v3.0 milestone notes live in `.planning/milestones/v3.0-LOCAL-FIRST.md`.
 
 ## Open work for next session
 
-The seven follow-ups from the original v3.0 list are all shipped on `main`. Next session is whatever surfaces from the user's first real local run — likely the rekey UI flow (changing passphrase on an existing encrypted DB via `PRAGMA rekey`), or whatever rough edge a real machine reveals.
+The seven original v3.0 follow-ups plus the rekey UI flow are all shipped on `feat/v3.0-local-first`. The rekey API (`POST /api/auth/rekey`) verifies the current passphrase against the bcrypt hash (not via `unlockDb`, which short-circuits on a cached handle), then runs `PRAGMA rekey` after dropping to DELETE journal mode (SQLCipher refuses rekey under WAL) and restores WAL. Next session is whatever surfaces from the user's first real local run.
 
 ## Things explicitly out of scope
 

@@ -124,4 +124,83 @@ describe('SettingsPanel', () => {
 
     expect(screen.queryByText(/import complete/i)).not.toBeInTheDocument()
   })
+
+  describe('Change passphrase', () => {
+    const fillRekeyForm = (current: string, next: string, confirm: string) => {
+      fireEvent.change(screen.getByLabelText(/current passphrase/i), {
+        target: { value: current },
+      })
+      fireEvent.change(screen.getByLabelText(/^new passphrase/i), {
+        target: { value: next },
+      })
+      fireEvent.change(screen.getByLabelText(/confirm new passphrase/i), {
+        target: { value: confirm },
+      })
+    }
+
+    it('shows an error when the new passphrase is too short', async () => {
+      render(<SettingsPanel />)
+      fillRekeyForm('current-pass', 'short', 'short')
+      fireEvent.click(screen.getByRole('button', { name: /change passphrase/i }))
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          'New passphrase must be at least 8 characters.'
+        )
+      })
+    })
+
+    it('shows an error when the new passphrases do not match', async () => {
+      render(<SettingsPanel />)
+      fillRekeyForm('current-pass', 'long-enough', 'mismatch-too')
+      fireEvent.click(screen.getByRole('button', { name: /change passphrase/i }))
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('New passphrases do not match.')
+      })
+    })
+
+    it('POSTs to /api/auth/rekey on a valid form and shows a success toast', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+
+      render(<SettingsPanel />)
+      fillRekeyForm('current-pass', 'new-pass-12', 'new-pass-12')
+      fireEvent.click(screen.getByRole('button', { name: /change passphrase/i }))
+
+      await waitFor(() => {
+        expect(fetchSpy).toHaveBeenCalledWith(
+          '/api/auth/rekey',
+          expect.objectContaining({ method: 'POST' })
+        )
+      })
+
+      const body = JSON.parse(
+        (fetchSpy.mock.calls[0][1] as RequestInit).body as string
+      ) as { current: string; next: string }
+      expect(body).toEqual({ current: 'current-pass', next: 'new-pass-12' })
+      expect(toast.success).toHaveBeenCalledWith('Passphrase changed.')
+
+      fetchSpy.mockRestore()
+    })
+
+    it('surfaces invalid_current_passphrase as a friendly toast', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ ok: false, error: 'invalid_current_passphrase' }),
+          { status: 401, headers: { 'content-type': 'application/json' } }
+        )
+      )
+
+      render(<SettingsPanel />)
+      fillRekeyForm('wrong-pass', 'new-pass-12', 'new-pass-12')
+      fireEvent.click(screen.getByRole('button', { name: /change passphrase/i }))
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Current passphrase is wrong.')
+      })
+    })
+  })
 })

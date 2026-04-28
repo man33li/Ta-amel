@@ -91,6 +91,27 @@ export function lockDb(): void {
   }
 }
 
+/**
+ * SQLCipher in-place rekey on the open handle. The DB must already be unlocked
+ * with the current key. Subsequent process restarts will require the new key
+ * to open the file. No-op when encryption is disabled (test mode).
+ *
+ * SQLCipher refuses rekey in WAL mode — we drop to DELETE for the rekey and
+ * restore WAL right after.
+ */
+export function rekeyDb(newPassphrase: string): void {
+  if (!cached) {
+    throw new Error('database_not_unlocked')
+  }
+  if (isEncryptionDisabled()) return
+  cached.pragma('journal_mode = DELETE')
+  try {
+    cached.pragma(`rekey = '${escapeSqlString(newPassphrase)}'`)
+  } finally {
+    cached.pragma('journal_mode = WAL')
+  }
+}
+
 function resolveDbPath(): string {
   if (process.env.MINDFORGE_DB_PATH) return process.env.MINDFORGE_DB_PATH
   const dir = process.env.MINDFORGE_DATA_DIR ?? join(process.cwd(), 'data')

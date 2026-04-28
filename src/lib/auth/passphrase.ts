@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { getSetting, setSetting } from '@/lib/db/repo'
-import { isDbFilePresent, isDbUnlocked, unlockDb } from '@/lib/db/sqlite'
+import { isDbFilePresent, isDbUnlocked, rekeyDb, unlockDb } from '@/lib/db/sqlite'
 
 /**
  * Passphrase management on top of SQLCipher.
@@ -62,4 +62,33 @@ export async function verifyPassphrase(passphrase: string): Promise<boolean> {
   const hash = getSetting(HASH_KEY)
   if (!hash) return false
   return bcrypt.compare(passphrase, hash)
+}
+
+/**
+ * Verify the user-supplied current passphrase against the stored bcrypt hash.
+ * Used for in-app actions (e.g. rekey) where unlockDb would short-circuit on
+ * the already-cached handle and accept anything.
+ */
+export async function verifyCurrentPassphrase(passphrase: string): Promise<boolean> {
+  const hash = getSetting(HASH_KEY)
+  if (!hash) return false
+  return bcrypt.compare(passphrase, hash)
+}
+
+/**
+ * Re-encrypt the on-disk database with a new passphrase and refresh the
+ * stored bcrypt hash. The user stays logged in — iron-session is signed with
+ * a separate per-installation secret and is unaffected.
+ */
+export async function rekeyPassphrase(current: string, next: string): Promise<void> {
+  if (next.length < MIN_LENGTH) {
+    throw new Error('passphrase_too_short')
+  }
+  const ok = await verifyCurrentPassphrase(current)
+  if (!ok) {
+    throw new Error('invalid_current_passphrase')
+  }
+  rekeyDb(next)
+  const hash = await bcrypt.hash(next, ROUNDS)
+  setSetting(HASH_KEY, hash)
 }

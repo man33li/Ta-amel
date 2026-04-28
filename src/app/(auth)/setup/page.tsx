@@ -4,13 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Spinner } from '@/components/ui/Spinner'
 
-/**
- * First-run setup page. Pick a passphrase; we hash it (bcrypt) and store
- * the hash locally. There's no recovery — if you lose the passphrase, the
- * data on disk is still readable (SQLite isn't encrypted at rest), but the
- * UI won't let you back in until you pick a new one. That's by design for a
- * single-user local app.
- */
+// First-run setup. The passphrase IS the SQLCipher key, so losing it = the
+// on-disk database is unrecoverable. The recovery banner below makes that
+// stake visible before the user picks a passphrase.
 export const dynamic = 'force-dynamic'
 
 export default function SetupPage() {
@@ -67,6 +63,15 @@ export default function SetupPage() {
           <p className="mt-2 text-gray-600 dark:text-gray-400">
             Pick a passphrase to lock your local notes. Used only on this device.
           </p>
+        </div>
+
+        <div
+          role="note"
+          className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 px-4 py-3 rounded-lg text-sm"
+        >
+          <strong className="font-semibold">No recovery.</strong> Your passphrase
+          is also the encryption key for your data. If you lose it, your notes
+          are unrecoverable. Save it in a passphrase manager.
         </div>
 
         {error && (
