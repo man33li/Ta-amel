@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type Database from 'better-sqlite3'
+import type Database from 'better-sqlite3-multiple-ciphers'
 import { getDb } from './sqlite'
 import type { Card, Wing, Room } from '@/types'
 

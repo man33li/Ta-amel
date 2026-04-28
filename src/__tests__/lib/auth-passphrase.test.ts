@@ -49,10 +49,11 @@ describe('verifyPassphrase', () => {
     await expect(verifyPassphrase('wrong-pass')).resolves.toBe(false)
   })
 
-  it('second setPassphrase wins — new passphrase verifies, old one does not', async () => {
+  it('rejects a second setPassphrase once the DB is initialised', async () => {
     await setPassphrase('first-passphrase')
-    await setPassphrase('second-passphrase')
-    await expect(verifyPassphrase('second-passphrase')).resolves.toBe(true)
-    await expect(verifyPassphrase('first-passphrase')).resolves.toBe(false)
+    await expect(setPassphrase('second-passphrase')).rejects.toThrow(/already set up/i)
+    // The first passphrase still verifies; the second never took effect.
+    await expect(verifyPassphrase('first-passphrase')).resolves.toBe(true)
+    await expect(verifyPassphrase('second-passphrase')).resolves.toBe(false)
   })
 })

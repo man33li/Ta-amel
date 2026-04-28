@@ -2,6 +2,10 @@ import '@testing-library/jest-dom'
 import { vi, beforeEach } from 'vitest'
 import type { Card, Wing, Room, SearchHit } from '@/types'
 
+// Tests run against plaintext SQLite. Encryption is exercised explicitly in
+// src/__tests__/lib/db-encryption.test.ts which clears this flag.
+process.env.MINDFORGE_DISABLE_ENCRYPTION = '1'
+
 // ============================================================================
 // MOCK DATA STORE
 // ============================================================================

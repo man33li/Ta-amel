@@ -1,13 +1,22 @@
-import Database from 'better-sqlite3'
-import { mkdirSync, readFileSync, readdirSync } from 'node:fs'
+import Database from 'better-sqlite3-multiple-ciphers'
+import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 /**
- * SQLite singleton.
+ * SQLite singleton with optional SQLCipher encryption.
  *
- * One file, one connection per process. Migrations in /migrations apply on
- * first open and are tracked in the `_migrations` table — idempotent, so
- * restarting the dev server is safe.
+ * Production:
+ *   - unlockDb(passphrase) opens (or creates) the encrypted file with that
+ *     passphrase as the SQLCipher key. Subsequent getDb() calls return the
+ *     same handle until lockDb() runs or the process exits.
+ *   - Wrong passphrase = SQLITE_NOTADB on the first read; we surface that as
+ *     a boolean false from unlockDb().
+ *
+ * Tests:
+ *   - Set MINDFORGE_DISABLE_ENCRYPTION=1 in the test setup. unlockDb becomes
+ *     a no-op once a plaintext handle is cached, and __resetDbForTests
+ *     close-and-reopens that plaintext handle so existing tests keep working
+ *     unchanged.
  *
  * Path resolution:
  *   1. MINDFORGE_DB_PATH (absolute)            — explicit override
@@ -18,26 +27,78 @@ import { dirname, join } from 'node:path'
 
 let cached: Database.Database | null = null
 
+const isEncryptionDisabled = (): boolean =>
+  process.env.MINDFORGE_DISABLE_ENCRYPTION === '1'
+
 export function getDb(): Database.Database {
-  if (cached) return cached
+  if (!cached) {
+    throw new Error('database_not_initialized')
+  }
+  return cached
+}
+
+export function isDbUnlocked(): boolean {
+  return cached !== null
+}
+
+export function isDbFilePresent(): boolean {
+  const dbPath = resolveDbPath()
+  if (dbPath === ':memory:') return false
+  try {
+    return existsSync(dbPath)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Open (or create) the database with the given passphrase as the SQLCipher key.
+ * Returns false on wrong passphrase, true on success. Idempotent: a second
+ * unlock with the same passphrase reuses the cached handle.
+ */
+export function unlockDb(passphrase: string): boolean {
+  if (cached) return true
 
   const dbPath = resolveDbPath()
-  mkdirSync(dirname(dbPath), { recursive: true })
+  if (dbPath !== ':memory:') {
+    mkdirSync(dirname(dbPath), { recursive: true })
+  }
 
-  const db = new Database(dbPath)
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  db.pragma('synchronous = NORMAL')
+  let db: Database.Database
+  try {
+    db = new Database(dbPath)
+    if (!isEncryptionDisabled() && passphrase.length > 0) {
+      db.pragma(`key = '${escapeSqlString(passphrase)}'`)
+    }
+    db.pragma('journal_mode = WAL')
+    db.pragma('foreign_keys = ON')
+    db.pragma('synchronous = NORMAL')
+    // Force a read so a wrong key surfaces now rather than at first query.
+    db.prepare('select count(*) from sqlite_master').get()
+  } catch {
+    return false
+  }
 
   runMigrations(db)
   cached = db
-  return db
+  return true
+}
+
+export function lockDb(): void {
+  if (cached) {
+    cached.close()
+    cached = null
+  }
 }
 
 function resolveDbPath(): string {
   if (process.env.MINDFORGE_DB_PATH) return process.env.MINDFORGE_DB_PATH
   const dir = process.env.MINDFORGE_DATA_DIR ?? join(process.cwd(), 'data')
   return join(dir, 'mindforge.db')
+}
+
+function escapeSqlString(s: string): string {
+  return s.replace(/'/g, "''")
 }
 
 function runMigrations(db: Database.Database) {
@@ -53,7 +114,7 @@ function runMigrations(db: Database.Database) {
   try {
     files = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort()
   } catch {
-    return // No migrations directory yet — nothing to do.
+    return
   }
 
   const applied = new Set(
@@ -70,10 +131,25 @@ function runMigrations(db: Database.Database) {
   }
 }
 
-// Tests only — closes and forgets the singleton so the next getDb() opens fresh.
+/**
+ * Tests only — closes the cached handle and reopens a plaintext one so each
+ * test starts from a clean migrated DB without going through the unlock flow.
+ * Honors MINDFORGE_DISABLE_ENCRYPTION=1 set in the test setup.
+ */
 export function __resetDbForTests() {
   if (cached) {
     cached.close()
     cached = null
   }
+
+  const dbPath = resolveDbPath()
+  if (dbPath !== ':memory:') {
+    mkdirSync(dirname(dbPath), { recursive: true })
+  }
+  const db = new Database(dbPath)
+  db.pragma('journal_mode = WAL')
+  db.pragma('foreign_keys = ON')
+  db.pragma('synchronous = NORMAL')
+  runMigrations(db)
+  cached = db
 }
