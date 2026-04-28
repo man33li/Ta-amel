@@ -18,6 +18,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // next/link and next/navigation have no JS in this env — stub them for Vite's resolver.
+      // vi.mock() in setup.ts / individual tests still overrides behavior at test time.
+      'next/link': path.resolve(__dirname, './src/__tests__/mocks/next-link.tsx'),
+      'next/navigation': path.resolve(__dirname, './src/__tests__/mocks/next-navigation.ts'),
     },
   },
 })
