@@ -75,7 +75,8 @@ export function unlockDb(passphrase: string): boolean {
     db.pragma('synchronous = NORMAL')
     // Force a read so a wrong key surfaces now rather than at first query.
     db.prepare('select count(*) from sqlite_master').get()
-  } catch {
+  } catch (err) {
+    console.error('[mindforge] unlockDb failed:', err instanceof Error ? err.message : err)
     return false
   }
 
