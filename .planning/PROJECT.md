@@ -74,24 +74,26 @@ v2.0 — AI memory + spatial UX (implemented, superseded by v3.0 for runtime):
 
 <!-- Explicit boundaries. Includes reasoning to prevent re-adding. -->
 
-- New features beyond v1.0 scope — focus was quality, not functionality
-- Mobile app — web-first, Vercel deployment target
-- Real-time collaboration — adds complexity, not needed for personal use
-- Additional OAuth providers — Google is sufficient for v1
+- Multi-user / family share — local-first answer is "second instance on a second device"
+- Sync between devices — genuinely hard, not free
+- Mobile-optimized palace view — desktop-first UX sufficient for v3.0
+- Migration from v1/v2 Supabase data — user picked "fresh start" explicitly
 
 ## Constraints
 
-- **Platform**: Vercel deployment — must work with Vercel's build system
-- **Database**: Supabase — already integrated, no changes to backend
-- **Stack**: No major refactors — polish existing code, don't rewrite
+- **Platform**: Any machine with Node.js 18+ and a writable filesystem — not Vercel-bound
+- **Database**: SQLite via `better-sqlite3` — single file, native build required
+- **Stack**: No subscription services — adding one violates the v3.0 thesis
+- **Embedder**: Must work offline after first model download (~25 MB to transformers.js cache)
 
 ## Known Tech Debt
 
-Accumulated during v1.0, tracked for future cleanup:
-- No logout button in Header (user has no UI path to sign out)
+Carried from v1.0/v2.0 and new in v3.0:
 - TiptapEditor test coverage at 67.74% (jsdom limitations)
-- Unused Database type export in types/index.ts
-- Note page duplicates Supabase calls instead of reusing useNotes
+- Note-edit page kept its own fetch loop instead of going through `useNotes` (debounce constraint)
+- No tests for `src/lib/{auth,db,embed,memory/store}.ts` or `/api/*` routes
+- Session-secret race in `src/lib/auth/session.ts:getSessionPassword` (being fixed in this wave)
+- `.db` file is plaintext at rest; passphrase only gates the UI
 
 ## Key Decisions
 
@@ -99,11 +101,11 @@ Accumulated during v1.0, tracked for future cleanup:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Focus on quality over features | App is functional, needs hardening | ✓ Good — shipped solid v1.0 |
-| Vercel as deployment target | Standard Next.js hosting, good DX | ✓ Good — deployed successfully |
-| Keep existing architecture | 4-layer structure is sound per review | ✓ Good — no refactoring needed |
-| Testing first in milestone | Tests catch regressions from fixes | ✓ Good — 114 tests, 0 regressions |
-| Root layout force-dynamic | Supabase client needs runtime | ✓ Good — fixed build errors |
+| Drop Supabase/OpenAI/Vercel | Eliminate recurring bills, own data | ✓ Good — SQLite + transformers.js + iron-session ship in v3.0 |
+| Single-user passphrase auth | Local-first means no multi-tenant complexity | ✓ Good — iron-session cookie + bcrypt hash in settings table |
+| Xenova/all-MiniLM-L6-v2 over bge-small-en-v1.5 | Smaller, faster; 384-dim is enough at single-user scale | ✓ Good — ~25 MB first-call download |
+| No knowledge graph, no LLM rerank, no auto-tag | Earn complexity with usage data | ✓ Good — Hybrid retrieval (semantic + keyword + recent) via RRF is enough for v3.0 |
+| Fresh start, no v1/v2 data migration | User explicit choice | ✓ Good — Clean v3.0 schema, no migration code |
 
 ---
-*Last updated: 2026-01-27 after v1.0 milestone complete*
+*Last updated: 2026-04-28 — v3.0 follow-up cleanup*
