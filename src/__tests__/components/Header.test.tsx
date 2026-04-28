@@ -91,4 +91,12 @@ describe('Header', () => {
     expect(screen.getByRole('button', { name: 'Lock' })).toBeInTheDocument()
     expect(screen.getByText('Lock')).toBeInTheDocument()
   })
+
+  it('renders a Settings nav link pointing to /settings', () => {
+    render(<Header />)
+
+    const link = screen.getByRole('link', { name: /settings/i })
+    expect(link).toBeInTheDocument()
+    expect(link).toHaveAttribute('href', '/settings')
+  })
 })
