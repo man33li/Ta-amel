@@ -10,7 +10,7 @@ Notes are saved reliably, recoverable by recall (semantic + keyword + recency), 
 
 ## Current State
 
-**Version:** v3.0 implemented (branch `feat/v3.0-local-first`, commit `c314027`, 2026-04-27). Awaiting user merge + first real local run.
+**Version:** v3.0 implemented + v3.1 follow-ups shipped (branch `feat/v3.0-local-first`, 2026-04-28). Awaiting user merge + first real local run.
 
 **Tech Stack (v3.0):**
 - Next.js 16.1.4 with App Router on React 19
@@ -50,17 +50,18 @@ Notes are saved reliably, recoverable by recall (semantic + keyword + recency), 
 - ✓ Loading states for all async operations — v1.0
 - ✓ Edge cases handled gracefully — v1.0
 - ✓ Accessible keyboard navigation — v1.0
+- ✓ Server-side test coverage on auth/repo/embedder/memory/api routes — v3.1
+- ✓ Session-secret race closed — v3.1
+- ✓ Lock confirms before logging out — v3.1
+- ✓ One-command Docker deploy — v3.1
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-v3.0 — local-first follow-ups (post-implementation tightening):
-- Server-side test coverage for new auth / repo / embedder / memory layers — v3.0
-- Fix the session-secret race in `src/lib/auth/session.ts:getSessionPassword` — v3.0
-- Add confirmation step to the Header Lock button — v3.0
-- (Optional) Dockerfile for home-server deployment — v3.0
-- (Optional) Export/import SQLite ↔ JSON — v3.0
+v3.2 — post-follow-up cleanup (final push before user merge):
+- Export/import SQLite ↔ JSON — in flight
+- Encrypted-at-rest SQLite via sqlcipher — deferred (risky on Windows native build)
 
 v2.0 — AI memory + spatial UX (implemented, superseded by v3.0 for runtime):
 - ✓ User can group notes into wings (top-level) and rooms (topics) — v2.0/v3.0
@@ -108,4 +109,4 @@ Carried from v1.0/v2.0 and new in v3.0:
 | Fresh start, no v1/v2 data migration | User explicit choice | ✓ Good — Clean v3.0 schema, no migration code |
 
 ---
-*Last updated: 2026-04-28 — v3.0 follow-up cleanup*
+*Last updated: 2026-04-28 — v3.0 follow-ups shipped*

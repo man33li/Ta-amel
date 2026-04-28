@@ -2,18 +2,18 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-04-27)
+See: `.planning/PROJECT.md` (updated 2026-04-28)
 Stack & conventions: `/CLAUDE.md` at the repo root.
 
 **Core value:** Local-first notes that survive subscription churn, with semantic recall and a memory-palace for finding things by where you put them.
-**Current focus:** v3.0 — local-first stack shipped on `feat/v3.0-local-first`; tightening before merge.
+**Current focus:** v3.0 — local-first stack shipped on `feat/v3.0-local-first`; follow-ups 1–5 merged on branch.
 
 ## Current Position
 
-Phase: post-v3.0 implementation, awaiting user merge + run
+Phase: v3.0 follow-ups shipped, awaiting user merge + run
 Plan: `.planning/milestones/v3.0-LOCAL-FIRST.md`
-Status: branch pushed, PR not yet opened
-Last activity: 2026-04-27 — v3.0 commit `c314027` pushed to GitHub
+Status: follow-ups 1–5 merged on branch; export/import in flight
+Last activity: 2026-04-28 — v3.1 follow-ups shipped
 
 ## Progress
 
@@ -21,6 +21,7 @@ Last activity: 2026-04-27 — v3.0 commit `c314027` pushed to GitHub
 v1.0: ██████████ 100% ✓ SHIPPED            (2026-01-27)
 v2.0: ██████████ 100% ✓ IMPLEMENTED        (2026-04-27, branch feat/v2.0-palace-memory)
 v3.0: ██████████ 100% ✓ IMPLEMENTED        (2026-04-27, branch feat/v3.0-local-first)
+v3.1: ██████████ 100% ✓ FOLLOW-UPS SHIPPED (2026-04-28, on feat/v3.0-local-first)
 ```
 
 ## Accumulated Context
@@ -37,35 +38,25 @@ v3.0: ██████████ 100% ✓ IMPLEMENTED        (2026-04-27, br
 
 ### Pending Todos (in priority order)
 
-1. Server-side test coverage — auth, repo, embedder, memory store, every `/api/*` route. v2.0 was 89%; v3.0 is below.
-2. Fix the session-secret race in `src/lib/auth/session.ts:getSessionPassword`.
-3. Add confirmation to the Header Lock button.
-4. Update top-level `.planning/PROJECT.md` (this file's neighbour).
-5. Dockerfile for home-server deployment.
-6. Export/import (SQLite → JSON).
-7. Encrypted-at-rest SQLite (sqlcipher).
+1. Export/import (SQLite → JSON).
+2. Encrypted-at-rest SQLite (sqlcipher).
 
 ### Blockers / Concerns
 
 - User has not yet merged `feat/v3.0-local-first` into `master`.
 - User has not yet pulled and run v3.0 locally — first real test of `better-sqlite3` Windows native build is still pending.
-- The PAT used for the v3.0 push appears identical to the one from v2.0; user was asked to revoke. Status of revocation unknown from sandbox.
 
 ### Tech Debt Backlog
 
 Carried from v1.0/v2.0 and not addressed in v3.0:
 - TiptapEditor test coverage at 67.74% (jsdom limitations).
-- Note-edit page used to duplicate Supabase calls; v3.0 rewrote it but didn't refactor it through `useNotes` (still its own fetch loop because of the debounce).
-
-New v3.0 tech debt:
-- No tests for `src/lib/{auth,db,embed,memory/store}.ts` or any new API route.
-- Session secret race condition (priority 2 above).
+- Note-edit page kept its own fetch loop instead of going through `useNotes` (debounce constraint).
 
 ## Session Continuity
 
-Last session: 2026-04-27
-Stopped at: v3.0 pushed, user reviewing follow-ups
+Last session: 2026-04-28
+Stopped at: v3.0 follow-ups merged, export/import in flight
 Resume file: `/CLAUDE.md` (loaded automatically) + this file
 
 ---
-*State updated: 2026-04-27 after v3.0 push*
+*State updated: 2026-04-28 after v3.1 follow-ups merged*
