@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { getIronSession } from 'iron-session'
-import { getSetting, setSetting } from '@/lib/db/repo'
+import { getSetting, setSettingIfAbsent } from '@/lib/db/repo'
 
 export interface SessionData {
   authenticatedAt?: number // unix ms
@@ -10,14 +10,12 @@ export interface SessionData {
 const COOKIE_NAME = 'mindforge_session'
 const SECRET_KEY = 'session_secret'
 
-/** Lazily generates a per-installation session secret on first use. */
-function getSessionPassword(): string {
-  let secret = getSetting(SECRET_KEY)
-  if (!secret) {
-    secret = randomBytes(32).toString('hex')
-    setSetting(SECRET_KEY, secret)
-  }
-  return secret
+export function getSessionPassword(): string {
+  const existing = getSetting(SECRET_KEY)
+  if (existing) return existing
+  // Race-safe: INSERT OR IGNORE means only one writer wins; re-read to get whichever value landed.
+  setSettingIfAbsent(SECRET_KEY, randomBytes(32).toString('hex'))
+  return getSetting(SECRET_KEY)!
 }
 
 export async function getSession(): Promise<SessionData & {

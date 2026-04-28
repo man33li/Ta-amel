@@ -263,6 +263,14 @@ export function setSetting(key: string, value: string): void {
     .run(key, value)
 }
 
+// Inserts only when the key is absent. Returns true if the row was inserted.
+export function setSettingIfAbsent(key: string, value: string): boolean {
+  const result = getDb()
+    .prepare('insert or ignore into settings (key, value) values (?, ?)')
+    .run(key, value)
+  return result.changes > 0
+}
+
 // Direct DB access for embedding store + tests
 export function db(): Database.Database {
   return getDb()
