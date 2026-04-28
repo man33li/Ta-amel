@@ -12,13 +12,13 @@ Notes are saved reliably, recoverable by recall (semantic + keyword + recency), 
 
 **Version:** v3.0 implemented + v3.1 follow-ups shipped (branch `feat/v3.0-local-first`, 2026-04-28). Awaiting user merge + first real local run.
 
-**Tech Stack (v3.0):**
+**Tech Stack (v3.0 + v3.1):**
 - Next.js 16.1.4 with App Router on React 19
-- SQLite via `better-sqlite3` (one file on disk)
+- SQLite via `better-sqlite3-multiple-ciphers` with SQLCipher v4 encryption (passphrase = key)
 - `@xenova/transformers` running `Xenova/all-MiniLM-L6-v2` for in-process embeddings
-- `iron-session` cookie + bcrypt-hashed passphrase for single-user auth
+- `iron-session` cookie; passphrase doubles as SQLCipher key + bcrypt hash (defence-in-depth)
 - Tiptap 3 editor, Zustand 5 store, Tailwind 4
-- Vitest 4 + React Testing Library (104 tests passing)
+- Vitest 4 + React Testing Library (279 tests passing)
 
 **Detailed stack reference:** `/CLAUDE.md` at the repo root (loaded automatically by Claude Code).
 
@@ -54,14 +54,14 @@ Notes are saved reliably, recoverable by recall (semantic + keyword + recency), 
 - ✓ Session-secret race closed — v3.1
 - ✓ Lock confirms before logging out — v3.1
 - ✓ One-command Docker deploy — v3.1
+- ✓ Backup and restore via /api/export and /api/import — v3.1
+- ✓ Encrypted SQLite at rest (SQLCipher v4 via better-sqlite3-multiple-ciphers) — v3.1
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-v3.2 — post-follow-up cleanup (final push before user merge):
-- Export/import SQLite ↔ JSON — in flight
-- Encrypted-at-rest SQLite via sqlcipher — deferred (risky on Windows native build)
+None on the follow-up list — all seven priorities shipped. Real local use will surface the next set.
 
 v2.0 — AI memory + spatial UX (implemented, superseded by v3.0 for runtime):
 - ✓ User can group notes into wings (top-level) and rooms (topics) — v2.0/v3.0
@@ -83,18 +83,16 @@ v2.0 — AI memory + spatial UX (implemented, superseded by v3.0 for runtime):
 ## Constraints
 
 - **Platform**: Any machine with Node.js 18+ and a writable filesystem — not Vercel-bound
-- **Database**: SQLite via `better-sqlite3` — single file, native build required
+- **Database**: SQLCipher-encrypted SQLite via `better-sqlite3-multiple-ciphers` — single file, native build required
 - **Stack**: No subscription services — adding one violates the v3.0 thesis
 - **Embedder**: Must work offline after first model download (~25 MB to transformers.js cache)
 
 ## Known Tech Debt
 
-Carried from v1.0/v2.0 and new in v3.0:
+Carried from v1.0/v2.0:
 - TiptapEditor test coverage at 67.74% (jsdom limitations)
 - Note-edit page kept its own fetch loop instead of going through `useNotes` (debounce constraint)
-- No tests for `src/lib/{auth,db,embed,memory/store}.ts` or `/api/*` routes
-- Session-secret race in `src/lib/auth/session.ts:getSessionPassword` (being fixed in this wave)
-- `.db` file is plaintext at rest; passphrase only gates the UI
+- Setup is one-shot — no UI flow to rekey an existing encrypted DB (would need a SQLCipher `PRAGMA rekey` action behind a confirm modal)
 
 ## Key Decisions
 
@@ -107,6 +105,7 @@ Carried from v1.0/v2.0 and new in v3.0:
 | Xenova/all-MiniLM-L6-v2 over bge-small-en-v1.5 | Smaller, faster; 384-dim is enough at single-user scale | ✓ Good — ~25 MB first-call download |
 | No knowledge graph, no LLM rerank, no auto-tag | Earn complexity with usage data | ✓ Good — Hybrid retrieval (semantic + keyword + recent) via RRF is enough for v3.0 |
 | Fresh start, no v1/v2 data migration | User explicit choice | ✓ Good — Clean v3.0 schema, no migration code |
+| SQLCipher via `better-sqlite3-multiple-ciphers` | Same API as `better-sqlite3`, no rewrite; passphrase becomes the AES-256 key | ✓ Good — file unrecognisable on disk without key, build + tests + Windows native all clean |
 
 ---
-*Last updated: 2026-04-28 — v3.0 follow-ups shipped*
+*Last updated: 2026-04-28 — SQLCipher integration completes the v3.0 follow-up list*
