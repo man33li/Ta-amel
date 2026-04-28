@@ -1,0 +1,13 @@
+node_modules
+.next
+data
+.git
+.planning
+.omc
+.claude
+coverage
+*.md
+.env*
+.gitignore
+Dockerfile
+.dockerignore
