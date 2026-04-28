@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/ui/Header'
 import { getSession, isAuthenticated } from '@/lib/auth/session'
 import { isSetUp } from '@/lib/auth/passphrase'
+import { isDbUnlocked } from '@/lib/db/sqlite'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +11,7 @@ export const dynamic = 'force-dynamic'
  * flash of unauthenticated content.
  *
  *   no passphrase set       -> /setup
+ *   db locked (cold start)  -> /login (can't read session secret yet)
  *   set but not logged in   -> /login
  *   logged in               -> render children
  */
@@ -19,6 +21,7 @@ export default async function MainLayout({
   children: React.ReactNode
 }) {
   if (!isSetUp()) redirect('/setup')
+  if (!isDbUnlocked()) redirect('/login')
 
   const session = await getSession()
   if (!isAuthenticated(session)) redirect('/login')

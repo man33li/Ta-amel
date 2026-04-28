@@ -47,6 +47,7 @@ export default function SetupPage() {
         return
       }
       router.push('/')
+      router.refresh()
     } catch {
       setError('Network error')
       setLoading(false)

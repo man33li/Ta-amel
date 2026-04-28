@@ -42,6 +42,7 @@ export default function LoginPage() {
         return
       }
       router.push('/')
+      router.refresh()
     } catch {
       setError('Network error')
       setLoading(false)
