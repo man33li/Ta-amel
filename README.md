@@ -69,6 +69,31 @@ docker build -t mindforge .
 docker run -d --name mindforge -p 3000:3000 -v mindforge-data:/data mindforge
 ```
 
+## Local LLM (optional)
+
+Toggle on in **Settings → Local LLM**, point it at a running [Ollama](https://ollama.com/) instance, and pick a model (e.g. `llama3.2:3b`). Two features become available:
+
+- **Summarize** button on each note posts the card to `/api/llm/summarize` and renders the result inline.
+- **Rerank** is exposed at `/api/llm/rerank` for clients that want to re-order their own search hits.
+
+Off by default. Nothing is sent anywhere when the toggle is off.
+
+## MCP server
+
+A Model Context Protocol server lets external agents (Claude Desktop, Codex, custom clients) talk to your local notes directly. Start it from inside the project:
+
+```bash
+MINDFORGE_PASSPHRASE='your-passphrase' npm run mcp
+```
+
+Tools exposed:
+
+- `list_wings`, `list_rooms`, `list_cards`
+- `search_cards` (BM25 keyword search)
+- `get_card`, `create_card`, `update_card`
+
+Add it to a client by configuring an MCP stdio server entry that runs `npm run mcp` in this directory with `MINDFORGE_PASSPHRASE` set in the environment. The encrypted DB stays where it is — the server unlocks it in-process and serves a stdio JSON-RPC stream.
+
 ## Scripts
 
 | Command | Description |
@@ -79,3 +104,4 @@ docker run -d --name mindforge -p 3000:3000 -v mindforge-data:/data mindforge
 | `npm test` | Run tests |
 | `npm run test:coverage` | Coverage report |
 | `npm run lint` | ESLint |
+| `npm run mcp` | Start the MindForge MCP server (stdio) |
