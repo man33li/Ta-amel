@@ -444,6 +444,104 @@ export function getIncomingLinks(toId: string): Card[] {
   return rows.map(cardFromRow)
 }
 
+// Knowledge graph relations ---------------------------------------------
+
+export interface EntityRelation {
+  id: string
+  subject_id: string
+  predicate: string
+  object_id: string
+  source_card_id: string | null
+  confidence: number
+  valid_from: string | null
+  valid_to: string | null
+  created_at: string
+}
+
+export interface EntityNeighbor {
+  id: string
+  name: string
+  type: string
+  predicate: string
+  weight: number
+}
+
+/**
+ * Replace all relations sourced from this card with a new set of co-occurs
+ * pairs. Pairs are stored canonically (lower id first) so an undirected
+ * relation produces exactly one row, but neighbor queries traverse both
+ * directions.
+ */
+export function setCardRelations(
+  cardId: string,
+  entityIds: string[],
+  predicate: string = 'co-occurs'
+): void {
+  const dbi = getDb()
+  const tx = dbi.transaction(() => {
+    dbi
+      .prepare('delete from entity_relations where source_card_id = ? and predicate = ?')
+      .run(cardId, predicate)
+    if (entityIds.length < 2) return
+    const insert = dbi.prepare(
+      `insert into entity_relations
+        (id, subject_id, predicate, object_id, source_card_id, confidence, valid_from)
+       values (?, ?, ?, ?, ?, 1.0, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`
+    )
+    for (let i = 0; i < entityIds.length; i++) {
+      for (let j = i + 1; j < entityIds.length; j++) {
+        const a = entityIds[i]
+        const b = entityIds[j]
+        const [subj, obj] = a < b ? [a, b] : [b, a]
+        insert.run(randomUUID(), subj, predicate, obj, cardId)
+      }
+    }
+  })
+  tx()
+}
+
+/**
+ * Top neighbors of an entity by co-occurrence weight. Walks both directions
+ * because relations are stored canonically.
+ */
+export function getEntityNeighbors(
+  entityId: string,
+  limit: number = 20
+): EntityNeighbor[] {
+  return getDb()
+    .prepare(
+      `select e.id, e.name, e.type, r.predicate, count(*) as weight
+       from entity_relations r
+       inner join entities e
+         on e.id = case when r.subject_id = ? then r.object_id else r.subject_id end
+       where r.subject_id = ? or r.object_id = ?
+       group by e.id, r.predicate
+       order by weight desc, e.name asc
+       limit ?`
+    )
+    .all(entityId, entityId, entityId, limit) as EntityNeighbor[]
+}
+
+export function getEntityCards(entityId: string, limit: number = 20): Card[] {
+  const rows = getDb()
+    .prepare(
+      `select c.* from card_entities ce
+       inner join cards c on c.id = ce.card_id
+       where ce.entity_id = ?
+       order by ce.mention_count desc, c.updated_at desc
+       limit ?`
+    )
+    .all(entityId, limit) as CardRow[]
+  return rows.map(cardFromRow)
+}
+
+export function getEntityById(entityId: string): CardEntity | null {
+  const row = getDb()
+    .prepare('select id, name, type, mention_count from entities where id = ?')
+    .get(entityId) as CardEntity | undefined
+  return row ?? null
+}
+
 // Direct DB access for embedding store + tests
 export function db(): Database.Database {
   return getDb()

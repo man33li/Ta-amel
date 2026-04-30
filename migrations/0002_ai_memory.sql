@@ -50,7 +50,7 @@ create table if not exists entity_relations (
   subject_id      text not null references entities(id) on delete cascade,
   predicate       text not null,
   object_id       text not null references entities(id) on delete cascade,
-  source_card_id  text references cards(id) on delete set null,
+  source_card_id  text references cards(id) on delete cascade,
   confidence      real not null default 1.0,
   valid_from      text,
   valid_to        text,

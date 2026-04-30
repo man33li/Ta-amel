@@ -1,6 +1,11 @@
 import nlp from 'compromise'
 import { extractTextFromTiptap } from '@/lib/utils'
-import { setCardEntities, setAutoTags } from '@/lib/db/repo'
+import {
+  setCardEntities,
+  setAutoTags,
+  setCardRelations,
+  getCardEntities,
+} from '@/lib/db/repo'
 import type { Card } from '@/types'
 
 export type EntityType = 'person' | 'place' | 'org' | 'topic' | 'other'
@@ -87,6 +92,15 @@ export function syncCardEntities(card: Card): void {
   setCardEntities(
     card.id,
     entities.map((e) => ({ name: e.name, type: e.type, count: e.count }))
+  )
+
+  // Heuristic temporal KG: every pair of entities mentioned in the same card
+  // becomes a "co-occurs" edge. Querying neighbors of an entity surfaces the
+  // people / places / topics that show up alongside it across the corpus.
+  const persisted = getCardEntities(card.id)
+  setCardRelations(
+    card.id,
+    persisted.map((e) => e.id)
   )
 
   const autoTags = entities
