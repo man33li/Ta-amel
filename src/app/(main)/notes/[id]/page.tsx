@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useDebouncedCallback } from 'use-debounce'
 import { TiptapEditor } from '@/components/notes/TiptapEditor'
 import { BacklinksPanel } from '@/components/notes/BacklinksPanel'
+import { TagChips } from '@/components/notes/TagChips'
 import type { Card } from '@/types'
 
 /**
@@ -203,10 +204,14 @@ export default function NotePage() {
         value={note.title}
         onChange={handleTitleChange}
         placeholder="Untitled"
-        className="w-full text-3xl font-bold mb-6 p-2 -ml-2 border-none bg-transparent
+        className="w-full text-3xl font-bold mb-3 p-2 -ml-2 border-none bg-transparent
                    text-gray-900 dark:text-white placeholder-gray-400
                    focus:outline-none focus:ring-0"
       />
+
+      <div className="mb-6">
+        <TagChips cardId={note.id} />
+      </div>
 
       <TiptapEditor
         content={note.content}

@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth/guard'
 import { getCard, updateCard, deleteCard } from '@/lib/db/repo'
 import { syncCardEmbedding, removeCardEmbedding } from '@/lib/memory/store'
 import { syncCardLinks } from '@/lib/links'
+import { syncCardEntities } from '@/lib/entities'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -46,6 +47,7 @@ export async function PATCH(request: Request, { params }: Params) {
   // Re-parse [[card-id]] cross-references on every save. Synchronous because
   // it's pure SQLite and fast; failures bubble up as 500 (rare and we want to know).
   syncCardLinks(card)
+  syncCardEntities(card)
 
   // Best-effort embedding refresh. Do not block the response on it; if the
   // embedder is slow or unavailable the card update has already succeeded.

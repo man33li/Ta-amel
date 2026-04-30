@@ -6,7 +6,7 @@ create table if not exists card_tags (
   tag        text not null,
   source     text not null check (source in ('auto', 'user')),
   created_at text not null default (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-  primary key (card_id, tag)
+  primary key (card_id, tag, source)
 );
 create index if not exists card_tags_tag_idx on card_tags(tag);
 

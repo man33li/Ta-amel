@@ -271,6 +271,135 @@ export function setSettingIfAbsent(key: string, value: string): boolean {
   return result.changes > 0
 }
 
+// Card entities + tags ----------------------------------------------------
+
+export interface CardTag {
+  card_id: string
+  tag: string
+  source: 'auto' | 'user'
+  created_at: string
+}
+
+export interface CardEntity {
+  id: string
+  name: string
+  type: string
+  mention_count: number
+}
+
+export function setCardEntities(
+  cardId: string,
+  entities: Array<{ name: string; type: string; count: number }>
+): void {
+  const dbi = getDb()
+  const tx = dbi.transaction(() => {
+    dbi.prepare('delete from card_entities where card_id = ?').run(cardId)
+    if (entities.length === 0) return
+
+    const upsertEntity = dbi.prepare(
+      `insert into entities (id, name, normalized, type, mention_count, last_seen_at)
+       values (?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+       on conflict(normalized, type) do update set
+         mention_count = mention_count + excluded.mention_count,
+         last_seen_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`
+    )
+    const findEntity = dbi.prepare(
+      'select id from entities where normalized = ? and type = ?'
+    )
+    const insertCardEntity = dbi.prepare(
+      `insert or replace into card_entities (card_id, entity_id, mention_count)
+       values (?, ?, ?)`
+    )
+
+    for (const ent of entities) {
+      const norm = ent.name.toLowerCase().trim()
+      const id = randomUUID()
+      upsertEntity.run(id, ent.name, norm, ent.type, ent.count)
+      const found = findEntity.get(norm, ent.type) as { id: string } | undefined
+      if (!found) continue
+      insertCardEntity.run(cardId, found.id, ent.count)
+    }
+  })
+  tx()
+}
+
+export function getCardEntities(cardId: string): CardEntity[] {
+  return getDb()
+    .prepare(
+      `select e.id, e.name, e.type, ce.mention_count
+       from card_entities ce
+       inner join entities e on e.id = ce.entity_id
+       where ce.card_id = ?
+       order by ce.mention_count desc, e.name asc`
+    )
+    .all(cardId) as CardEntity[]
+}
+
+export function listEntities(opts: { type?: string; limit?: number } = {}): CardEntity[] {
+  const limit = opts.limit ?? 100
+  if (opts.type) {
+    return getDb()
+      .prepare(
+        `select id, name, type, mention_count
+         from entities where type = ?
+         order by mention_count desc, name asc
+         limit ?`
+      )
+      .all(opts.type, limit) as CardEntity[]
+  }
+  return getDb()
+    .prepare(
+      `select id, name, type, mention_count
+       from entities
+       order by mention_count desc, name asc
+       limit ?`
+    )
+    .all(limit) as CardEntity[]
+}
+
+export function setAutoTags(cardId: string, tags: string[]): void {
+  const dbi = getDb()
+  const tx = dbi.transaction(() => {
+    dbi.prepare("delete from card_tags where card_id = ? and source = 'auto'").run(cardId)
+    if (tags.length === 0) return
+    const insert = dbi.prepare(
+      "insert or ignore into card_tags (card_id, tag, source) values (?, ?, 'auto')"
+    )
+    for (const tag of tags) {
+      const norm = tag.toLowerCase().trim()
+      if (!norm) continue
+      insert.run(cardId, norm)
+    }
+  })
+  tx()
+}
+
+export function addUserTag(cardId: string, tag: string): boolean {
+  const norm = tag.toLowerCase().trim()
+  if (!norm) return false
+  const result = getDb()
+    .prepare(
+      "insert or ignore into card_tags (card_id, tag, source) values (?, ?, 'user')"
+    )
+    .run(cardId, norm)
+  return result.changes > 0
+}
+
+export function removeUserTag(cardId: string, tag: string): boolean {
+  const result = getDb()
+    .prepare("delete from card_tags where card_id = ? and tag = ? and source = 'user'")
+    .run(cardId, tag.toLowerCase().trim())
+  return result.changes > 0
+}
+
+export function getCardTags(cardId: string): CardTag[] {
+  return getDb()
+    .prepare(
+      'select card_id, tag, source, created_at from card_tags where card_id = ? order by source desc, tag asc'
+    )
+    .all(cardId) as CardTag[]
+}
+
 // Card links --------------------------------------------------------------
 
 export function setCardLinks(fromId: string, toIds: string[]): void {
