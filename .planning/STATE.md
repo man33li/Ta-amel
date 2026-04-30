@@ -6,14 +6,14 @@ See: `.planning/PROJECT.md` (updated 2026-04-28)
 Stack & conventions: `/CLAUDE.md` at the repo root.
 
 **Core value:** Local-first notes that survive subscription churn, with semantic recall and a memory-palace for finding things by where you put them.
-**Current focus:** v3.1 smoke-test sections 1-9 confirmed green by user; merge to `main` + tag pending PAT.
+**Current focus:** v3.1 shipped to `main` + annotated tag `v3.1` published. Awaiting next idea.
 
 ## Current Position
 
-Phase: v3.1 smoke-tested locally on `feat/v3.0-local-first`; awaiting user authorization to merge + tag + push
-Plan: `.planning/milestones/v3.0-LOCAL-FIRST.md`
-Status: branch up to date with `origin/feat/v3.0-local-first` (HEAD `af83d60`); working tree clean
-Last activity: 2026-04-30 — re-baselined `tsc --noEmit` clean, `eslint .` clean, `vitest run` 294/294, `NEXT_TURBOPACK_EXPERIMENTAL_USE_SYSTEM_TLS_CERTS=1 npm run build` clean (Next 16.1.4 / Turbopack, 22 dynamic routes).
+Phase: v3.1 shipped (2026-04-30)
+Plan: `.planning/milestones/v3.0-LOCAL-FIRST.md` — closed
+Status: `origin/main` and `origin/feat/v3.0-local-first` both at `12c5ca3`; tag `v3.1` (object `af45008`) on origin
+Last activity: 2026-04-30 — FF-merged feat branch into `main`, created annotated tag, pushed all refs.
 
 ## Progress
 
@@ -22,7 +22,8 @@ v1.0: ██████████ 100% ✓ SHIPPED            (2026-01-27)
 v2.0: ██████████ 100% ✓ IMPLEMENTED        (2026-04-27, branch feat/v2.0-palace-memory)
 v3.0: ██████████ 100% ✓ IMPLEMENTED        (2026-04-27, branch feat/v3.0-local-first)
 v3.1: ██████████ 100% ✓ FOLLOW-UPS + REKEY (2026-04-28, on feat/v3.0-local-first)
-v3.1 smoke: █████████░  90% — sections 1-9 green; §10 build verified locally; §10 Docker deferred
+v3.1 smoke: █████████░  90% — §1-9 green, §10 build verified, §10.3 Docker deferred (non-blocking)
+v3.1 ship:  ██████████ 100% ✓ TAGGED + PUSHED        (2026-04-30, tag v3.1 -> 12c5ca3)
 ```
 
 ## Accumulated Context
@@ -39,15 +40,13 @@ v3.1 smoke: █████████░  90% — sections 1-9 green; §10 bui
 
 ### Pending Todos
 
-- Merge `feat/v3.0-local-first` -> `main` (user authorization required).
-- Tag `v3.1` on `main`.
-- Push `main` + tag `v3.1` to `origin` (needs fresh fine-grained PAT, Contents Read+write, 1 hour).
-- Optional: walk §10.3 Docker check before tagging.
+None mandatory. Optional follow-ups:
+- §10.3 Docker check when Docker Desktop daemon is up.
+- Promote `v3.1` annotated tag to a GitHub Release page (needs release-scope PAT).
 
 ### Blockers / Concerns
 
-- Sandbox cannot push to `man33li/Ta-amel` without a user-supplied PAT.
-- Commit signing in this sandbox is environmental — only bypass with `-c commit.gpgsign=false` after explicit user approval.
+None. Pre-existing constraints (per-session PAT for pushes, unsigned commits) still apply.
 
 ### Tech Debt Backlog
 
@@ -58,8 +57,8 @@ Carried from v1.0/v2.0 and still open:
 ## Session Continuity
 
 Last session: 2026-04-30
-Stopped at: smoke-test §1-9 green + §10 build verified; awaiting user auth to merge `feat/v3.0-local-first` -> `main`, tag v3.1, and push (PAT required)
+Stopped at: v3.1 shipped — `origin/main` + `origin/feat/v3.0-local-first` at `12c5ca3`, tag `v3.1` (object `af45008`) published. No active backlog.
 Resume file: `/CLAUDE.md` (loaded automatically) + this file
 
 ---
-*State updated: 2026-04-30 after smoke-test pass + production-build re-baseline*
+*State updated: 2026-04-30 after v3.1 ship (FF-merge to main + annotated tag + push)*

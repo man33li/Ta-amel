@@ -73,7 +73,16 @@
 - Externalize `better-sqlite3-multiple-ciphers` from Next bundling and surface `unlockDb` errors (`4f6a86b`)
 - Handle locked-DB cold start and stale RSC cache after login (`04df435`)
 
-**Branch:** `feat/v3.0-local-first` (2 commits ahead of origin as of 2026-04-29)
-**Status:** Awaiting user merge to `main` and first real local run.
+**Dev-mode singleton fix (2026-04-30):**
+- `globalThis.__mindforge_db_cached` backing for the unlocked-DB cache so Turbopack route-bundle re-instantiation in `npm run dev` does not drop the handle and bounce authenticated requests to `/login` (`af83d60`).
 
-**What's next:** Whatever surfaces from real local use. No active backlog.
+**Smoke test + ship (2026-04-30):**
+- Smoke-test §1-9 confirmed green; §10 production build re-verified locally (Next 16.1.4 / Turbopack, 22 dynamic routes, 6.2s compile).
+- Doc commit `12c5ca3` records the smoke-test pass.
+- FF-merged `feat/v3.0-local-first` → `main`; annotated tag `v3.1` (tag object `af45008`) covers the local-first stack + SQLCipher + rekey + dev-mode singleton fix.
+- All refs pushed to `origin`.
+
+**Branch:** `feat/v3.0-local-first` and `main` both at `12c5ca3` on origin.
+**Status:** v3.1 shipped 2026-04-30. Tag `v3.1` published.
+
+**What's next:** No active backlog. §10.3 Docker check still optional. Future direction goes through `/gsd-new-milestone`.
