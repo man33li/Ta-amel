@@ -21,6 +21,20 @@ function makeFile(content: string, name = 'backup.json') {
   return new File([content], name, { type: 'application/json' })
 }
 
+// Default response for the LLM status mount-fetch. Each test that uses
+// mockResolvedValueOnce for its primary API call must queue this first so
+// the LLM fetch consumes it instead of stealing the test's mock.
+const llmStatusOk = () =>
+  new Response(
+    JSON.stringify({
+      enabled: false,
+      endpoint: 'http://localhost:11434',
+      model: 'llama3.2:3b',
+      reachable: false,
+    }),
+    { status: 200, headers: { 'content-type': 'application/json' } }
+  )
+
 describe('SettingsPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -50,12 +64,15 @@ describe('SettingsPanel', () => {
   })
 
   it('selecting a file and clicking Restore POSTs to /api/import', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(JSON.stringify(mockImportSuccess), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      })
-    )
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(llmStatusOk())
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(mockImportSuccess), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
 
     render(<SettingsPanel />)
 
@@ -72,17 +89,17 @@ describe('SettingsPanel', () => {
         expect.objectContaining({ method: 'POST' })
       )
     })
-
-    fetchSpy.mockRestore()
   })
 
   it('shows result counts after a successful import', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(JSON.stringify(mockImportSuccess), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      })
-    )
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(llmStatusOk())
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(mockImportSuccess), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
 
     render(<SettingsPanel />)
 
@@ -102,12 +119,14 @@ describe('SettingsPanel', () => {
   })
 
   it('shows an error toast when the API returns an error response', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-      new Response(JSON.stringify({ ok: false, error: 'unsupported_version' }), {
-        status: 400,
-        headers: { 'content-type': 'application/json' },
-      })
-    )
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(llmStatusOk())
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: false, error: 'unsupported_version' }), {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
 
     render(<SettingsPanel />)
 
@@ -159,12 +178,15 @@ describe('SettingsPanel', () => {
     })
 
     it('POSTs to /api/auth/rekey on a valid form and shows a success toast', async () => {
-      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
-      )
+      const fetchSpy = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(llmStatusOk())
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          })
+        )
 
       render(<SettingsPanel />)
       fillRekeyForm('current-pass', 'new-pass-12', 'new-pass-12')
@@ -177,22 +199,23 @@ describe('SettingsPanel', () => {
         )
       })
 
+      const rekeyCall = fetchSpy.mock.calls.find((c) => c[0] === '/api/auth/rekey')!
       const body = JSON.parse(
-        (fetchSpy.mock.calls[0][1] as RequestInit).body as string
+        (rekeyCall[1] as RequestInit).body as string
       ) as { current: string; next: string }
       expect(body).toEqual({ current: 'current-pass', next: 'new-pass-12' })
       expect(toast.success).toHaveBeenCalledWith('Passphrase changed.')
-
-      fetchSpy.mockRestore()
     })
 
     it('surfaces invalid_current_passphrase as a friendly toast', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ ok: false, error: 'invalid_current_passphrase' }),
-          { status: 401, headers: { 'content-type': 'application/json' } }
+      vi.spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(llmStatusOk())
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({ ok: false, error: 'invalid_current_passphrase' }),
+            { status: 401, headers: { 'content-type': 'application/json' } }
+          )
         )
-      )
 
       render(<SettingsPanel />)
       fillRekeyForm('wrong-pass', 'new-pass-12', 'new-pass-12')

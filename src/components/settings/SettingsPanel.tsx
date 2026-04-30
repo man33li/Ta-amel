@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 
 interface ImportResult {
@@ -30,6 +30,37 @@ export function SettingsPanel() {
   const [nextPass, setNextPass] = useState('')
   const [confirmPass, setConfirmPass] = useState('')
   const [rekeying, setRekeying] = useState(false)
+
+  const [llm, setLlm] = useState<{
+    enabled: boolean
+    endpoint: string
+    model: string
+    reachable: boolean
+  } | null>(null)
+  const [llmSaving, setLlmSaving] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/llm/status', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b) => {
+        if (b) setLlm(b)
+      })
+  }, [])
+
+  const saveLlm = async (patch: Partial<NonNullable<typeof llm>>) => {
+    setLlmSaving(true)
+    try {
+      const res = await fetch('/api/llm/status', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(patch),
+      })
+      if (res.ok) setLlm(await res.json())
+      else toast.error('Could not save LLM settings.')
+    } finally {
+      setLlmSaving(false)
+    }
+  }
 
   const handleRekey = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -161,6 +192,90 @@ export function SettingsPanel() {
               Skipped: {result.skipped.wings} wings, {result.skipped.rooms} rooms,{' '}
               {result.skipped.cards} cards, {result.skipped.embeddings} embeddings
             </p>
+          </div>
+        )}
+      </section>
+
+      {/* Local LLM */}
+      <section className="rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+          Local LLM (optional)
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Off by default. When enabled, MindForge can call a locally-running
+          Ollama instance to summarize notes and rerank search results. Nothing
+          leaves your machine.
+        </p>
+
+        {llm && (
+          <div className="space-y-3 max-w-md">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={llm.enabled}
+                disabled={llmSaving}
+                onChange={(e) => saveLlm({ enabled: e.target.checked })}
+              />
+              <span>Enable LLM features</span>
+              {llm.enabled && (
+                <span
+                  className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+                    llm.reachable
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                      : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                  }`}
+                >
+                  {llm.reachable ? 'reachable' : 'unreachable'}
+                </span>
+              )}
+            </label>
+
+            <div>
+              <label
+                htmlFor="llm-endpoint"
+                className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Ollama endpoint
+              </label>
+              <input
+                id="llm-endpoint"
+                type="text"
+                defaultValue={llm.endpoint}
+                onBlur={(e) => {
+                  if (e.target.value !== llm.endpoint) saveLlm({ endpoint: e.target.value })
+                }}
+                placeholder="http://localhost:11434"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="llm-model"
+                className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Model
+              </label>
+              <input
+                id="llm-model"
+                type="text"
+                defaultValue={llm.model}
+                onBlur={(e) => {
+                  if (e.target.value !== llm.model) saveLlm({ model: e.target.value })
+                }}
+                placeholder="llama3.2:3b"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => saveLlm({})}
+              disabled={llmSaving}
+              className="px-3 py-1.5 text-sm rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200"
+            >
+              Test connection
+            </button>
           </div>
         )}
       </section>

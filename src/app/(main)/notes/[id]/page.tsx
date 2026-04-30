@@ -23,6 +23,8 @@ export default function NotePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [summary, setSummary] = useState<string | null>(null)
+  const [summarizing, setSummarizing] = useState(false)
 
   const fetchNote = useCallback(async () => {
     setLoading(true)
@@ -95,6 +97,33 @@ export default function NotePage() {
     },
     [saveNote]
   )
+
+  const handleSummarize = async () => {
+    if (!note) return
+    setSummarizing(true)
+    setSummary(null)
+    try {
+      const res = await fetch('/api/llm/summarize', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ cardId: note.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data.ok === false) {
+        const code = data.error ?? 'unknown'
+        if (code === 'llm_disabled') {
+          setError('Local LLM is off. Enable it in /settings.')
+        } else {
+          setError(`Could not summarize: ${code}`)
+        }
+        setTimeout(() => setError(null), 5000)
+      } else {
+        setSummary(data.summary as string)
+      }
+    } finally {
+      setSummarizing(false)
+    }
+  }
 
   const handleDelete = async () => {
     if (!note) return
@@ -185,6 +214,13 @@ export default function NotePage() {
             </span>
           )}
           <button
+            onClick={handleSummarize}
+            disabled={summarizing}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm disabled:opacity-50"
+          >
+            {summarizing ? 'Summarizing…' : 'Summarize'}
+          </button>
+          <button
             onClick={handleDelete}
             className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm"
           >
@@ -212,6 +248,23 @@ export default function NotePage() {
       <div className="mb-6">
         <TagChips cardId={note.id} />
       </div>
+
+      {summary && (
+        <div className="mb-6 p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-sm text-blue-900 dark:text-blue-100">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+              Summary
+            </span>
+            <button
+              onClick={() => setSummary(null)}
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              dismiss
+            </button>
+          </div>
+          <p className="whitespace-pre-wrap">{summary}</p>
+        </div>
+      )}
 
       <TiptapEditor
         content={note.content}
