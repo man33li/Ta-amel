@@ -6,18 +6,37 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased]
+## [3.3.0] - 2026-04-30 — AI Memory Layer
 
-### Fixed
-- Cold-start auth flow: `(main)` layout redirects to `/login` when the DB is locked instead of crashing on `getSession`; login page calls `router.refresh()` to clear stale RSC cache (`04df435`, 2026-04-29).
-- Next.js bundling: externalize `better-sqlite3-multiple-ciphers` and `better-sqlite3` from server bundles via `serverExternalPackages`; `unlockDb` now surfaces native errors via `console.error` instead of swallowing (`4f6a86b`, 2026-04-29).
-- Dev-mode auth: `globalThis.__mindforge_db_cached` backs the singleton so Turbopack route-bundle re-instantiation no longer drops the unlocked handle (`af83d60`, 2026-04-30).
+### Added
+- **BM25 keyword scoring** — replaces SQL `LIKE` with full Okapi BM25 (K1=1.5, B=0.75, RSJ-IDF) computed in-process per query. `src/lib/memory/bm25.ts`, wired into `/api/memory/search` (`03c4960`).
+- **Continuous time-decay in RRF** — freshness multiplier `exp(-LN2 * ageDays / 90)` replaces the prior step-function recency lane (`03c4960`).
+- **Zettelkasten `[[card-id]]` cross-references** — parsed on every save, persisted to `card_links`. Backlinks panel + Copy `[[link]]` affordance on every note. `src/lib/links.ts`, `/api/cards/[id]/links` GET (`4075811`).
+- **Entity extraction** — compromise.js pulls people / places / orgs / topics from card body + title. Topic extraction supplements `topics()` with multi-mention nouns and multi-word noun phrases. `src/lib/entities.ts` (`3040b62`).
+- **Auto-tags + manual tag UI** — top topics persist as auto-tags; `TagChips` component on the note page differentiates auto vs user tags and supports add/remove. `card_tags` PK is `(card_id, tag, source)` so an auto and a user tag with the same name coexist (`3040b62`).
+- **Temporal knowledge graph** — every pair of entities mentioned in the same card becomes a `co-occurs` edge in `entity_relations`. `/api/entities` and `/api/entities/[id]` plus a `/palace/entities` browser. Source-card delete cascades the derived edges (`3c39dbc`).
+- **Optional Ollama bridge** — off by default. Settings UI exposes endpoint, model, and a Test connection button. `/api/llm/summarize` (cardId or text in, summary out), `/api/llm/rerank` (query + items in, reordered items out). `Summarize` button on the note page renders the result inline. `/api/llm/*` returns 503 `llm_disabled` when the toggle is off (`c6097e3`).
+- **MCP stdio server** — `bin/mindforge-mcp.ts` opens the encrypted DB in-process and registers seven tools (`list_wings`, `list_rooms`, `list_cards`, `search_cards`, `get_card`, `create_card`, `update_card`). Run via `npm run mcp` with `MINDFORGE_PASSPHRASE` set. Smoke test boots the server, sends `initialize` + `tools/list`, asserts the protocol round-trips (`c0534ac`).
+
+### Schema (`migrations/0002_ai_memory.sql`)
+- New tables: `card_tags`, `card_links`, `entities`, `card_entities`, `entity_relations`. All idempotent, all FK-cascading from `cards`.
 
 ### Tests
-- Added coverage for the locked-DB cold-start short-circuit in `GET /api/auth/session` and `requireAuth` (291 → 294 passing).
+- 294 → 339 passing across 44 files. New test files: `bm25.test.ts`, `links.test.ts`, `entities.test.ts`, `kg.test.ts`, `llm.test.ts`, `bin/mcp-server.test.ts`.
+
+### Dependencies
+- `+@modelcontextprotocol/sdk` (^1.29.0) for the MCP server.
+- `+compromise` (^14.15.0) for entity extraction.
+- `+tsx` (devDep) so `npm run mcp` can execute the TypeScript bin.
 
 ### Verified
-- 2026-04-30: smoke-test §1-9 green per user; baselines re-confirmed locally — `tsc --noEmit` clean, `eslint .` clean, `vitest run` 294/294, `NEXT_TURBOPACK_EXPERIMENTAL_USE_SYSTEM_TLS_CERTS=1 npm run build` clean (Next 16.1.4 / Turbopack, 22 dynamic routes).
+- 2026-04-30: `tsc --noEmit` clean, `eslint .` clean, `vitest run` 339/339, `NEXT_TURBOPACK_EXPERIMENTAL_USE_SYSTEM_TLS_CERTS=1 npm run build` exit 0 with 30 dynamic routes. User waived smoke-test pass.
+
+---
+
+## [Unreleased]
+
+(empty — last unreleased batch shipped as v3.3.0)
 
 ---
 
