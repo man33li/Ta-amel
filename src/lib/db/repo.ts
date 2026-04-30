@@ -271,6 +271,50 @@ export function setSettingIfAbsent(key: string, value: string): boolean {
   return result.changes > 0
 }
 
+// Card links --------------------------------------------------------------
+
+export function setCardLinks(fromId: string, toIds: string[]): void {
+  const dbi = getDb()
+  const tx = dbi.transaction(() => {
+    dbi.prepare('delete from card_links where from_id = ?').run(fromId)
+    if (toIds.length === 0) return
+    const insert = dbi.prepare(
+      'insert or ignore into card_links (from_id, to_id) values (?, ?)'
+    )
+    const cardExists = dbi.prepare('select 1 from cards where id = ?')
+    for (const toId of toIds) {
+      if (toId === fromId) continue
+      if (!cardExists.get(toId)) continue
+      insert.run(fromId, toId)
+    }
+  })
+  tx()
+}
+
+export function getOutgoingLinks(fromId: string): Card[] {
+  const rows = getDb()
+    .prepare(
+      `select c.* from card_links l
+       inner join cards c on c.id = l.to_id
+       where l.from_id = ?
+       order by c.updated_at desc`
+    )
+    .all(fromId) as CardRow[]
+  return rows.map(cardFromRow)
+}
+
+export function getIncomingLinks(toId: string): Card[] {
+  const rows = getDb()
+    .prepare(
+      `select c.* from card_links l
+       inner join cards c on c.id = l.from_id
+       where l.to_id = ?
+       order by c.updated_at desc`
+    )
+    .all(toId) as CardRow[]
+  return rows.map(cardFromRow)
+}
+
 // Direct DB access for embedding store + tests
 export function db(): Database.Database {
   return getDb()

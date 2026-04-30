@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useDebouncedCallback } from 'use-debounce'
 import { TiptapEditor } from '@/components/notes/TiptapEditor'
+import { BacklinksPanel } from '@/components/notes/BacklinksPanel'
 import type { Card } from '@/types'
 
 /**
@@ -216,6 +217,8 @@ export default function NotePage() {
       <div className="mt-6 text-sm text-gray-400 dark:text-gray-500">
         Last updated: {new Date(note.updated_at).toLocaleString()}
       </div>
+
+      <BacklinksPanel cardId={note.id} />
     </div>
   )
 }

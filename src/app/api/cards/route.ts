@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/guard'
 import { listCards, createCard } from '@/lib/db/repo'
+import { syncCardLinks } from '@/lib/links'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -31,5 +32,6 @@ export async function POST(request: Request) {
     content: body.content,
     roomId: body.room_id ?? null,
   })
+  syncCardLinks(card)
   return NextResponse.json({ card }, { status: 201 })
 }
