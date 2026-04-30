@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth/guard'
 import { db } from '@/lib/db/repo'
 import { semanticSearch } from '@/lib/memory/store'
 import { mergeSearchHits } from '@/lib/memory/merge'
+import { bm25Search } from '@/lib/memory/bm25'
 import { extractTextFromTiptap } from '@/lib/utils'
 import type { Card, SearchHit } from '@/types'
 
@@ -56,24 +57,36 @@ function keywordSearch({
   roomId: string | null
   limit: number
 }): SearchHit[] {
-  const pattern = `%${q.replace(/[%_]/g, '\\$&')}%`
+  // Pull the candidate corpus (cards in scope), score with BM25 in-process.
+  // At single-user scale (~bounded card count), this beats `LIKE %q%` on
+  // partial / multi-token queries without needing FTS5 or maintaining an index.
   const rows = roomId
     ? (db()
         .prepare(
           `select id, title, content, updated_at, room_id from cards
-           where room_id = ? and (title like ? escape '\\' or content like ? escape '\\')
-           order by updated_at desc limit ?`
+           where room_id = ?`
         )
-        .all(roomId, pattern, pattern, limit) as CardRow[])
+        .all(roomId) as CardRow[])
     : (db()
-        .prepare(
-          `select id, title, content, updated_at, room_id from cards
-           where title like ? escape '\\' or content like ? escape '\\'
-           order by updated_at desc limit ?`
-        )
-        .all(pattern, pattern, limit) as CardRow[])
+        .prepare(`select id, title, content, updated_at, room_id from cards`)
+        .all() as CardRow[])
 
-  return rows.map(rowToHit('keyword'))
+  if (rows.length === 0) return []
+
+  const ranked = bm25Search(
+    rows,
+    (row) => {
+      const content = parseContent(row.content) as Card['content']
+      return `${row.title} ${extractTextFromTiptap(content as Record<string, unknown>)}`
+    },
+    q,
+    limit
+  )
+
+  return ranked.map(({ doc, score }) => {
+    const hit = rowToHit('keyword')(doc)
+    return { ...hit, score }
+  })
 }
 
 function recentSearch({
