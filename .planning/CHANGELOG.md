@@ -11,9 +11,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - Cold-start auth flow: `(main)` layout redirects to `/login` when the DB is locked instead of crashing on `getSession`; login page calls `router.refresh()` to clear stale RSC cache (`04df435`, 2026-04-29).
 - Next.js bundling: externalize `better-sqlite3-multiple-ciphers` and `better-sqlite3` from server bundles via `serverExternalPackages`; `unlockDb` now surfaces native errors via `console.error` instead of swallowing (`4f6a86b`, 2026-04-29).
+- Dev-mode auth: `globalThis.__mindforge_db_cached` backs the singleton so Turbopack route-bundle re-instantiation no longer drops the unlocked handle (`af83d60`, 2026-04-30).
 
 ### Tests
 - Added coverage for the locked-DB cold-start short-circuit in `GET /api/auth/session` and `requireAuth` (291 → 294 passing).
+
+### Verified
+- 2026-04-30: smoke-test §1-9 green per user; baselines re-confirmed locally — `tsc --noEmit` clean, `eslint .` clean, `vitest run` 294/294, `NEXT_TURBOPACK_EXPERIMENTAL_USE_SYSTEM_TLS_CERTS=1 npm run build` clean (Next 16.1.4 / Turbopack, 22 dynamic routes).
 
 ---
 
