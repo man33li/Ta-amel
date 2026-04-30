@@ -25,12 +25,26 @@ import { dirname, join } from 'node:path'
  *   3. <cwd>/data/mindforge.db                 — sensible default
  */
 
-let cached: Database.Database | null = null
+// Back the singleton with globalThis so it survives Next.js dev-mode module
+// re-evaluation (Turbopack instantiates a new copy of this file per route
+// bundle on first compile, which would otherwise reset `cached` to null and
+// kick the user back to /login on every newly-compiled segment).
+const globalForDb = globalThis as unknown as {
+  __mindforge_db_cached?: Database.Database | null
+}
+
+const getCached = (): Database.Database | null =>
+  globalForDb.__mindforge_db_cached ?? null
+
+const setCached = (db: Database.Database | null): void => {
+  globalForDb.__mindforge_db_cached = db
+}
 
 const isEncryptionDisabled = (): boolean =>
   process.env.MINDFORGE_DISABLE_ENCRYPTION === '1'
 
 export function getDb(): Database.Database {
+  const cached = getCached()
   if (!cached) {
     throw new Error('database_not_initialized')
   }
@@ -38,7 +52,7 @@ export function getDb(): Database.Database {
 }
 
 export function isDbUnlocked(): boolean {
-  return cached !== null
+  return getCached() !== null
 }
 
 export function isDbFilePresent(): boolean {
@@ -57,7 +71,7 @@ export function isDbFilePresent(): boolean {
  * unlock with the same passphrase reuses the cached handle.
  */
 export function unlockDb(passphrase: string): boolean {
-  if (cached) return true
+  if (getCached()) return true
 
   const dbPath = resolveDbPath()
   if (dbPath !== ':memory:') {
@@ -81,14 +95,15 @@ export function unlockDb(passphrase: string): boolean {
   }
 
   runMigrations(db)
-  cached = db
+  setCached(db)
   return true
 }
 
 export function lockDb(): void {
+  const cached = getCached()
   if (cached) {
     cached.close()
-    cached = null
+    setCached(null)
   }
 }
 
@@ -101,6 +116,7 @@ export function lockDb(): void {
  * restore WAL right after.
  */
 export function rekeyDb(newPassphrase: string): void {
+  const cached = getCached()
   if (!cached) {
     throw new Error('database_not_unlocked')
   }
@@ -159,9 +175,10 @@ function runMigrations(db: Database.Database) {
  * Honors MINDFORGE_DISABLE_ENCRYPTION=1 set in the test setup.
  */
 export function __resetDbForTests() {
-  if (cached) {
-    cached.close()
-    cached = null
+  const existing = getCached()
+  if (existing) {
+    existing.close()
+    setCached(null)
   }
 
   const dbPath = resolveDbPath()
@@ -173,5 +190,5 @@ export function __resetDbForTests() {
   db.pragma('foreign_keys = ON')
   db.pragma('synchronous = NORMAL')
   runMigrations(db)
-  cached = db
+  setCached(db)
 }

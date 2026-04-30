@@ -85,7 +85,7 @@ v2.0 — AI memory + spatial UX (implemented, superseded by v3.0 for runtime):
 
 ## Constraints
 
-- **Platform**: Any machine with Node.js 18+ and a writable filesystem — not Vercel-bound
+- **Platform**: Any machine with Node.js 20+ and a writable filesystem — not Vercel-bound (Next.js 16 dropped Node 18 support)
 - **Database**: SQLCipher-encrypted SQLite via `better-sqlite3-multiple-ciphers` — single file, native build required
 - **Stack**: No subscription services — adding one violates the v3.0 thesis
 - **Embedder**: Must work offline after first model download (~25 MB to transformers.js cache)

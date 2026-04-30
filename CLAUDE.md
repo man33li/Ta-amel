@@ -73,7 +73,7 @@ src/
 ```bash
 npx tsc --noEmit          # types
 npx eslint .              # 0 errors expected
-npx vitest run            # currently 279 passing
+npx vitest run            # currently 294 passing
 NEXT_TURBOPACK_EXPERIMENTAL_USE_SYSTEM_TLS_CERTS=1 npm run build
 ```
 
@@ -89,7 +89,7 @@ If you can't reach Google Fonts (sandbox / offline), the `NEXT_TURBOPACK…` env
 
 - **Cold start:** the DB is locked. `/api/auth/session GET` short-circuits to `{ authenticated: false }` without trying to read settings. Any other authenticated route returns 401 (`requireAuth()` checks `isDbUnlocked()` first).
 - **Login:** `verifyPassphrase` calls `unlockDb(passphrase)`. SQLCipher rejects the wrong key with `SQLITE_NOTADB`, which the helper turns into a `false` return.
-- **After login:** the unlocked handle is cached at module scope for the rest of the process lifetime. All requests share it.
+- **After login:** the unlocked handle is cached on `globalThis.__mindforge_db_cached` (NOT a module-local `let`) for the rest of the process lifetime. All requests share it. The `globalThis` backing is load-bearing in dev mode: Next.js 16 / Turbopack instantiates a fresh copy of `src/lib/db/sqlite.ts` per route bundle on first compile, which would reset a module-local cache to `null` and force a redirect to `/login` for every newly-compiled segment. **Don't refactor it back to `let cached`.**
 - **Logout:** clears the iron-session cookie but does NOT lock the DB — other open tabs may still need it. Process restart is the way to fully relock.
 
 ## Milestones
@@ -99,13 +99,35 @@ If you can't reach Google Fonts (sandbox / offline), the `NEXT_TURBOPACK…` env
 | v1.0 | shipped 2026-01-27 | merged | Cloud-backed: Supabase auth + Postgres, Tiptap, Vercel. 114 tests, 89% coverage. |
 | v2.0 | implemented 2026-04-27 | `feat/v2.0-palace-memory` | mem0ai memory layer + wings/rooms/cards palace UX. Still cloud-backed. |
 | v3.0 | implemented 2026-04-27 | `feat/v3.0-local-first` | Drops Supabase, OpenAI, Vercel. SQLite + local embeddings + passphrase auth. |
-| v3.1 | shipped 2026-04-28 | `feat/v3.0-local-first` / `main` | All v3.0 follow-ups: server test coverage, session-race fix, lock confirm, Dockerfile, export/import, SQLCipher at rest, rekey UI, setup-page recovery warning, README rewrite. 291 tests passing. |
+| v3.1 | shipped 2026-04-28 | `feat/v3.0-local-first` | All v3.0 follow-ups: server test coverage, session-race fix, lock confirm, Dockerfile, export/import, SQLCipher at rest, rekey UI, setup-page recovery warning, README rewrite. |
+| v3.1.x | in progress 2026-04-29 | `feat/v3.0-local-first` (uncommitted) | Cold-start auth fix, Next externalization, Node-20 engines pin, locked-DB short-circuit tests, **dev-mode globalThis singleton fix**. 294 tests passing. |
 
 v3.0 milestone notes live in `.planning/milestones/v3.0-LOCAL-FIRST.md`.
 
-## Open work for next session
+## Open work for next session — checkpoint 2026-04-29
 
-The seven original v3.0 follow-ups plus the rekey UI flow are all shipped on `feat/v3.0-local-first`. The rekey API (`POST /api/auth/rekey`) verifies the current passphrase against the bcrypt hash (not via `unlockDb`, which short-circuits on a cached handle), then runs `PRAGMA rekey` after dropping to DELETE journal mode (SQLCipher refuses rekey under WAL) and restores WAL. Next session is whatever surfaces from the user's first real local run.
+User is mid-way through the **first real local run** of v3.1 on `npm run dev` (Windows 11). They got past `/login`, navigated `/`, and confirmed `/palace` and `/settings` no longer bounce to login after the dev-mode singleton fix.
+
+**Working tree (uncommitted):**
+- `M CLAUDE.md` — this file
+- `M package.json` — added `"engines": { "node": ">=20.0.0" }` (Next 16 dropped Node 18)
+- `M src/lib/db/sqlite.ts` — singleton now backed by `globalThis.__mindforge_db_cached` (see Auth-lifecycle section)
+- `M src/__tests__/api/auth-session.test.ts` — added locked-DB cold-start test
+- `?? src/__tests__/lib/auth-guard.test.ts` — new file, 2 tests for `requireAuth` locked-DB and unauth paths
+- `M .planning/{PROJECT,MILESTONES,CHANGELOG,.continue-here}.md` — brought current
+- `?? .planning/SMOKE-TEST.md` — new, **the test plan the user is working through**
+
+**Recent committed-but-unpushed fixes** on `feat/v3.0-local-first`:
+- `04df435` fix(auth): handle locked DB cold-start and stale RSC cache after login
+- `4f6a86b` fix(next): externalize SQLite native addons and surface unlockDb errors
+
+**Resume protocol:**
+1. Ask the user where they are in `.planning/SMOKE-TEST.md`. The file is sectioned 1-10; tick boxes track progress.
+2. If a step in the smoke test failed, ask for the dev-server log + browser console for that step. Diagnose, fix, ask them to retry.
+3. When sections 1-9 are all green, prompt the user to commit (single commit covering test+config + a docs commit covering `.planning/*.md` reads cleanly) and push. Per Don't-do-without-permission rules, ask for the PAT before pushing.
+4. Section 10 (build + production / Docker) is optional and can be deferred until after merge to `main`.
+
+**Do not** refactor the `globalThis` singleton in `sqlite.ts` back to a module-local `let` — see the Auth lifecycle section. That was the root cause of "logged in but `/palace` redirects to `/login`" reported on 2026-04-29.
 
 ## Things explicitly out of scope
 
